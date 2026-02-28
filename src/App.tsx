@@ -6,12 +6,13 @@ import PreviewModal from './components/PreviewModal';
 import CreateProjectModal from './components/CreateProjectModal';
 import EmptyState from './components/EmptyState';
 import JournalView from './components/JournalView';
+import PromptsView from './components/PromptsView';
 import AuthScreen from './components/AuthScreen';
-import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry } from './store';
+import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
-import { FileText, BookOpen, Loader2 } from 'lucide-react';
-import type { Project, JournalEntry } from './types';
+import { FileText, BookOpen, Sparkles, Loader2 } from 'lucide-react';
+import type { Project, JournalEntry, Prompt } from './types';
 
 function App() {
   const { user, loading } = useAuth();
@@ -21,7 +22,7 @@ function App() {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'documents' | 'journal'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts'>('documents');
 
   // Load projects when user changes
   useEffect(() => {
@@ -113,6 +114,30 @@ function App() {
     [activeProjectId]
   );
 
+  const handleAddPrompt = useCallback(
+    (title: string, content: string) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => addPrompt(prev, activeProjectId, title, content));
+    },
+    [activeProjectId]
+  );
+
+  const handleUpdatePrompt = useCallback(
+    (promptId: string, fields: Partial<Pick<Prompt, 'title' | 'content'>>) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => updatePrompt(prev, activeProjectId, promptId, fields));
+    },
+    [activeProjectId]
+  );
+
+  const handleDeletePrompt = useCallback(
+    (promptId: string) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => deletePrompt(prev, activeProjectId, promptId));
+    },
+    [activeProjectId]
+  );
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -168,6 +193,22 @@ function App() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab('prompts')}
+                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                  activeTab === 'prompts'
+                    ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
+                    : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
+                }`}
+              >
+                <Sparkles size={15} strokeWidth={1.5} />
+                Prompts
+                {activeProject.prompts.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                    {activeProject.prompts.length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {/* Tab content */}
@@ -196,12 +237,19 @@ function App() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : activeTab === 'journal' ? (
               <JournalView
                 entries={activeProject.journalEntries}
                 onAddEntry={handleAddJournalEntry}
                 onUpdateEntry={handleUpdateJournalEntry}
                 onDeleteEntry={handleDeleteJournalEntry}
+              />
+            ) : (
+              <PromptsView
+                prompts={activeProject.prompts}
+                onAddPrompt={handleAddPrompt}
+                onUpdatePrompt={handleUpdatePrompt}
+                onDeletePrompt={handleDeletePrompt}
               />
             )}
           </div>

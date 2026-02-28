@@ -1,4 +1,4 @@
-import type { Project, Document, JournalEntry } from './types';
+import type { Project, Document, JournalEntry, Prompt } from './types';
 import { DOCUMENT_TEMPLATES } from './constants';
 
 const LEGACY_KEY = 'project-docs-data';
@@ -33,7 +33,7 @@ export function loadProjects(userId: string): Project[] {
     }
 
     const data: Project[] = raw ? JSON.parse(raw) : [];
-    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [] }));
+    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [] }));
   } catch {
     return [];
   }
@@ -56,6 +56,7 @@ export function createProject(name: string): Project {
     createdAt: new Date().toISOString(),
     documents,
     journalEntries: [],
+    prompts: [],
   };
 }
 
@@ -125,6 +126,59 @@ export function deleteJournalEntry(
     return {
       ...p,
       journalEntries: p.journalEntries.filter((e) => e.id !== entryId),
+    };
+  });
+}
+
+export function addPrompt(
+  projects: Project[],
+  projectId: string,
+  title: string,
+  content: string
+): Project[] {
+  const now = new Date().toISOString();
+  const prompt: Prompt = {
+    id: generateId(),
+    title: title.trim(),
+    content,
+    createdAt: now,
+    updatedAt: now,
+  };
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return { ...p, prompts: [prompt, ...p.prompts] };
+  });
+}
+
+export function updatePrompt(
+  projects: Project[],
+  projectId: string,
+  promptId: string,
+  fields: Partial<Pick<Prompt, 'title' | 'content'>>
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      prompts: p.prompts.map((pr) =>
+        pr.id === promptId
+          ? { ...pr, ...fields, updatedAt: new Date().toISOString() }
+          : pr
+      ),
+    };
+  });
+}
+
+export function deletePrompt(
+  projects: Project[],
+  projectId: string,
+  promptId: string
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      prompts: p.prompts.filter((pr) => pr.id !== promptId),
     };
   });
 }
