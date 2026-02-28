@@ -55,18 +55,6 @@ function JournalEditor({
   const viewRef = useRef<EditorView | null>(null);
   const latestContent = useRef(content);
 
-  const handleSave = useCallback(
-    () => {
-      if (!viewRef.current) return;
-      const value = viewRef.current.state.doc.toString();
-      if (value !== latestContent.current) {
-        onSave(value);
-        latestContent.current = value;
-      }
-    },
-    [onSave]
-  );
-
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -80,6 +68,13 @@ function JournalEditor({
         markdown(),
         ...(isDark ? [oneDark] : []),
         keymap.of([...defaultKeymap, ...historyKeymap]),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            const value = update.state.doc.toString();
+            onSave(value);
+            latestContent.current = value;
+          }
+        }),
         EditorView.theme({
           '&': {
             height: '100%',
@@ -104,21 +99,7 @@ function JournalEditor({
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
 
-    // Save on blur
-    const handler = () => {
-      const value = view.state.doc.toString();
-      if (value !== latestContent.current) {
-        onSave(value);
-        latestContent.current = value;
-      }
-    };
-    const dom = view.dom;
-    dom.addEventListener('focusout', handler);
-
     return () => {
-      dom.removeEventListener('focusout', handler);
-      // Save before destroying
-      handleSave();
       view.destroy();
     };
   }, [entryId, isDark]);
