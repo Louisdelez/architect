@@ -1,7 +1,11 @@
 import type { Project, Document, JournalEntry } from './types';
 import { DOCUMENT_TEMPLATES } from './constants';
 
-const STORAGE_KEY = 'project-docs-data';
+const LEGACY_KEY = 'project-docs-data';
+
+function storageKey(userId: string): string {
+  return `project-docs-${userId}`;
+}
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -14,9 +18,20 @@ export function slugify(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export function loadProjects(): Project[] {
+export function loadProjects(userId: string): Project[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = storageKey(userId);
+    let raw = localStorage.getItem(key);
+
+    // Migration: copy legacy data to user-scoped key on first load
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        raw = legacy;
+      }
+    }
+
     const data: Project[] = raw ? JSON.parse(raw) : [];
     return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [] }));
   } catch {
@@ -24,8 +39,8 @@ export function loadProjects(): Project[] {
   }
 }
 
-export function saveProjects(projects: Project[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+export function saveProjects(projects: Project[], userId: string): void {
+  localStorage.setItem(storageKey(userId), JSON.stringify(projects));
 }
 
 export function createProject(name: string): Project {

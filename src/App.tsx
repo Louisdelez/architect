@@ -6,23 +6,40 @@ import PreviewModal from './components/PreviewModal';
 import CreateProjectModal from './components/CreateProjectModal';
 import EmptyState from './components/EmptyState';
 import JournalView from './components/JournalView';
+import AuthScreen from './components/AuthScreen';
 import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry } from './store';
 import { downloadProjectZip } from './utils/export';
-import { FileText, BookOpen } from 'lucide-react';
+import { useAuth } from './contexts/AuthContext';
+import { FileText, BookOpen, Loader2 } from 'lucide-react';
 import type { Project, JournalEntry } from './types';
 
 function App() {
-  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+  const { user, loading } = useAuth();
+
+  const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState<'documents' | 'journal'>('documents');
 
+  // Load projects when user changes
+  useEffect(() => {
+    if (user) {
+      setProjects(loadProjects(user.uid));
+    } else {
+      setProjects([]);
+      setActiveProjectId(null);
+      setActiveDocumentId(null);
+    }
+  }, [user]);
+
   // Persist to localStorage on change
   useEffect(() => {
-    saveProjects(projects);
-  }, [projects]);
+    if (user) {
+      saveProjects(projects, user.uid);
+    }
+  }, [projects, user]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
   const activeDocument = activeProject?.documents.find((d) => d.id === activeDocumentId) ?? null;
@@ -95,6 +112,18 @@ function App() {
     },
     [activeProjectId]
   );
+
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="h-full w-full flex p-4">

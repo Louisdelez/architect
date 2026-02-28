@@ -2,6 +2,7 @@ import { Plus, FolderOpen, Search, Download, Trash2, Sun, Moon, Monitor } from '
 import { createPortal } from 'react-dom';
 import type { Project } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import UserMenu from './UserMenu';
 
 interface SidebarProps {
   projects: Project[];
@@ -271,6 +272,8 @@ export default function Sidebar({
           );
         })}
       </div>
+
+      <UserMenu />
     </aside>
   );
 }
