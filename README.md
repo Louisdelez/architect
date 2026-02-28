@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# Project Docs
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web de gestion de documents projet. Créez un projet et retrouvez instantanément 23 documents pré-configurés (PRD, Roadmap, Technical Spec, etc.) avec un éditeur Markdown intégré. Chaque projet dispose aussi d'un journal de bord pour suivre l'avancement au fil du temps.
 
-Currently, two official plugins are available:
+## Fonctionnalités
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Documents projet
+- **23 templates** générés automatiquement à la création d'un projet (Vision Document, PRD, Roadmap, Technical Specification, Decision Log, etc.)
+- **Editeur Markdown** avec CodeMirror (coloration syntaxique, numéros de ligne, historique undo/redo)
+- **Preview** du rendu Markdown en temps réel
+- **Export** : copie presse-papier, téléchargement .md, téléchargement .pdf, export .zip du projet complet
 
-## React Compiler
+### Journal de bord
+- Entrées horodatées automatiquement (date de création + dernière modification)
+- Editeur Markdown (CodeMirror) par entrée
+- Preview du rendu Markdown par entrée
+- Copie du contenu dans le presse-papier par entrée
+- Téléchargement individuel (.md avec frontmatter) ou groupé
+- Auto-save au blur, tri chronologique inversé
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Interface
+- Design Apple-like minimaliste
+- Thème clair / sombre / système
+- Barre de recherche projets
+- Indicateur de progression par projet (documents remplis)
+- Persistance localStorage
 
-## Expanding the ESLint configuration
+## Stack technique
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Couche | Technologie |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Build | Vite 7 |
+| CSS | Tailwind CSS v4 |
+| Editeur | CodeMirror 6 |
+| Markdown | react-markdown + remark-gfm |
+| Icônes | Lucide React |
+| Export | file-saver, jsPDF, JSZip |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/Louisdelez/project-docs.git
+cd project-docs
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+L'application est accessible sur `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Commande | Description |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm run build` | Build de production (TypeScript + Vite) |
+| `npm run preview` | Preview du build de production |
+| `npm run lint` | Lint ESLint |
+
+## Licence
+
+[MIT](LICENSE)
