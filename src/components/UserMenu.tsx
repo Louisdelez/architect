@@ -19,9 +19,18 @@ export default function UserMenu() {
   return (
     <div className="px-4 py-4 border-t border-border flex items-center gap-3">
       {/* Avatar */}
-      <div className="w-9 h-9 rounded-full bg-accent/15 text-accent flex items-center justify-center text-[13px] font-semibold shrink-0">
-        {getInitials(user.displayName)}
-      </div>
+      {user.photoURL ? (
+        <img
+          src={user.photoURL}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="w-9 h-9 rounded-full shrink-0 object-cover"
+        />
+      ) : (
+        <div className="w-9 h-9 rounded-full bg-accent/15 text-accent flex items-center justify-center text-[13px] font-semibold shrink-0">
+          {getInitials(user.displayName)}
+        </div>
+      )}
 
       {/* Info */}
       <div className="flex-1 min-w-0">
