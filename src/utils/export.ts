@@ -1,6 +1,4 @@
-import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import jsPDF from 'jspdf';
 import type { Project, Document, JournalEntry } from '../types';
 import { slugify } from '../store';
 
@@ -13,7 +11,8 @@ export function downloadMarkdown(document: Document): void {
   saveAs(blob, `${document.name}.md`);
 }
 
-export function downloadPdf(document: Document): void {
+export async function downloadPdf(document: Document): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -137,6 +136,7 @@ export function downloadAllJournalEntries(entries: JournalEntry[]): void {
 }
 
 export async function downloadProjectZip(project: Project): Promise<void> {
+  const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
   const folder = zip.folder(project.name);
   if (!folder) return;

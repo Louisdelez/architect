@@ -1,20 +1,21 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import DocumentList from './components/DocumentList';
 import Editor from './components/Editor';
 import PreviewModal from './components/PreviewModal';
 import CreateProjectModal from './components/CreateProjectModal';
 import EmptyState from './components/EmptyState';
-import JournalView from './components/JournalView';
-import PromptsView from './components/PromptsView';
-import KanbanView from './components/KanbanView';
-import CalendarView from './components/CalendarView';
 import AuthScreen from './components/AuthScreen';
 import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, addCalendarEventException, deleteCalendarEventOccurrence } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
 import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2, Menu, ChevronLeft, List } from 'lucide-react';
 import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard, CalendarEvent, RecurrenceException } from './types';
+
+const JournalView = lazy(() => import('./components/JournalView'));
+const PromptsView = lazy(() => import('./components/PromptsView'));
+const KanbanView = lazy(() => import('./components/KanbanView'));
+const CalendarView = lazy(() => import('./components/CalendarView'));
 
 function App() {
   const { user, loading } = useAuth();
@@ -28,6 +29,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [docListOpen, setDocListOpen] = useState(false);
 
+  const initialLoadDone = useRef(false);
+
   // Load projects when user changes
   useEffect(() => {
     if (user) {
@@ -37,13 +40,18 @@ function App() {
       setActiveProjectId(null);
       setActiveDocumentId(null);
     }
+    // Reset so we skip the first save after loading
+    initialLoadDone.current = false;
   }, [user]);
 
-  // Persist to localStorage on change
+  // Persist to localStorage on change (skip initial load)
   useEffect(() => {
-    if (user) {
-      saveProjects(projects, user.uid);
+    if (!user) return;
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      return;
     }
+    saveProjects(projects, user.uid);
   }, [projects, user]);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
@@ -81,12 +89,17 @@ function App() {
     [projects]
   );
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
   const handleContentChange = useCallback(
     (content: string) => {
       if (!activeProjectId || !activeDocumentId) return;
-      setProjects((prev) =>
-        updateDocumentContent(prev, activeProjectId, activeDocumentId, content)
-      );
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setProjects((prev) =>
+          updateDocumentContent(prev, activeProjectId, activeDocumentId, content)
+        );
+      }, 300);
     },
     [activeProjectId, activeDocumentId]
   );
@@ -382,38 +395,42 @@ function App() {
                   </div>
                 )}
               </div>
-            ) : activeTab === 'journal' ? (
-              <JournalView
-                entries={activeProject.journalEntries}
-                onAddEntry={handleAddJournalEntry}
-                onUpdateEntry={handleUpdateJournalEntry}
-                onDeleteEntry={handleDeleteJournalEntry}
-              />
-            ) : activeTab === 'prompts' ? (
-              <PromptsView
-                prompts={activeProject.prompts}
-                onAddPrompt={handleAddPrompt}
-                onUpdatePrompt={handleUpdatePrompt}
-                onDeletePrompt={handleDeletePrompt}
-              />
-            ) : activeTab === 'kanban' ? (
-              <KanbanView
-                cards={activeProject.kanbanCards}
-                onAddCard={handleAddKanbanCard}
-                onUpdateCard={handleUpdateKanbanCard}
-                onMoveCard={handleMoveKanbanCard}
-                onDeleteCard={handleDeleteKanbanCard}
-              />
             ) : (
-              <CalendarView
-                events={activeProject.calendarEvents}
-                kanbanCards={activeProject.kanbanCards}
-                onAddEvent={handleAddCalendarEvent}
-                onUpdateEvent={handleUpdateCalendarEvent}
-                onDeleteEvent={handleDeleteCalendarEvent}
-                onUpdateOccurrence={handleUpdateCalendarOccurrence}
-                onDeleteOccurrence={handleDeleteCalendarOccurrence}
-              />
+              <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 size={24} className="animate-spin text-accent" /></div>}>
+                {activeTab === 'journal' ? (
+                  <JournalView
+                    entries={activeProject.journalEntries}
+                    onAddEntry={handleAddJournalEntry}
+                    onUpdateEntry={handleUpdateJournalEntry}
+                    onDeleteEntry={handleDeleteJournalEntry}
+                  />
+                ) : activeTab === 'prompts' ? (
+                  <PromptsView
+                    prompts={activeProject.prompts}
+                    onAddPrompt={handleAddPrompt}
+                    onUpdatePrompt={handleUpdatePrompt}
+                    onDeletePrompt={handleDeletePrompt}
+                  />
+                ) : activeTab === 'kanban' ? (
+                  <KanbanView
+                    cards={activeProject.kanbanCards}
+                    onAddCard={handleAddKanbanCard}
+                    onUpdateCard={handleUpdateKanbanCard}
+                    onMoveCard={handleMoveKanbanCard}
+                    onDeleteCard={handleDeleteKanbanCard}
+                  />
+                ) : (
+                  <CalendarView
+                    events={activeProject.calendarEvents}
+                    kanbanCards={activeProject.kanbanCards}
+                    onAddEvent={handleAddCalendarEvent}
+                    onUpdateEvent={handleUpdateCalendarEvent}
+                    onDeleteEvent={handleDeleteCalendarEvent}
+                    onUpdateOccurrence={handleUpdateCalendarOccurrence}
+                    onDeleteOccurrence={handleDeleteCalendarOccurrence}
+                  />
+                )}
+              </Suspense>
             )}
           </div>
         ) : (

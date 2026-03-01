@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, Download, FileDown, Trash2, BookOpen, ChevronDown, ChevronRight, Eye, Copy, Check, X } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
@@ -8,35 +8,15 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { downloadJournalEntry, downloadAllJournalEntries, copyToClipboard } from '../utils/export';
+import { formatTimestamp } from '../utils/format';
+import { useIsDark } from '../hooks/useIsDark';
 import type { JournalEntry } from '../types';
-
-function useIsDark() {
-  return useSyncExternalStore(
-    (cb) => {
-      const obs = new MutationObserver(cb);
-      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      return () => obs.disconnect();
-    },
-    () => document.documentElement.classList.contains('dark'),
-  );
-}
 
 interface JournalViewProps {
   entries: JournalEntry[];
   onAddEntry: (title: string, content: string) => void;
   onUpdateEntry: (entryId: string, fields: Partial<Pick<JournalEntry, 'title' | 'content'>>) => void;
   onDeleteEntry: (entryId: string) => void;
-}
-
-function formatTimestamp(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 /* ── Inline CodeMirror for journal entry content ── */

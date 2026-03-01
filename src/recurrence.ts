@@ -44,7 +44,6 @@ function dayOfWeekMon0(d: Date): number {
 function getNthWeekdayOfMonth(year: number, month: number, nth: number, weekday: number): Date | null {
   // weekday: 0=Mon..6=Sun, nth: 1-5 (5=last)
   const jsWeekday = (weekday + 1) % 7; // convert to JS 0=Sun..6=Sat
-  const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
   if (nth === 5) {
@@ -130,13 +129,10 @@ export function expandRecurrences(
     // Generate dates for this iteration
     let dates: Date[];
     if (useWeekdays) {
-      // For the first week, start from the event's start date
-      // For subsequent weeks, generate all weekday occurrences
-      const weekStart = iterations === 1 ? current : current;
       dates = [];
       for (const wd of rule.weekdays!.sort((a, b) => a - b)) {
-        const diff = wd - dayOfWeekMon0(weekStart);
-        const d = addDaysToDate(weekStart, diff);
+        const diff = wd - dayOfWeekMon0(current);
+        const d = addDaysToDate(current, diff);
         // For first iteration, skip days before the event start
         if (iterations === 1 && d < startDate) continue;
         dates.push(d);

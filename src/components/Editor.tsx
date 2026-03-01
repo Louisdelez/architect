@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -7,17 +7,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { Download, Eye, Copy, FileDown, Check } from 'lucide-react';
 import type { Document } from '../types';
 import { copyToClipboard, downloadMarkdown, downloadPdf } from '../utils/export';
-
-function useIsDark() {
-  return useSyncExternalStore(
-    (cb) => {
-      const obs = new MutationObserver(cb);
-      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      return () => obs.disconnect();
-    },
-    () => document.documentElement.classList.contains('dark'),
-  );
-}
+import { useIsDark } from '../hooks/useIsDark';
 
 interface EditorProps {
   document: Document;
@@ -31,13 +21,8 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
   const [copied, setCopied] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const isDark = useIsDark();
-
-  const handleChange = useCallback(
-    (content: string) => {
-      onContentChange(content);
-    },
-    [onContentChange]
-  );
+  const onChangeRef = useRef(onContentChange);
+  onChangeRef.current = onContentChange;
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -54,7 +39,7 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
         keymap.of([...defaultKeymap, ...historyKeymap]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            handleChange(update.state.doc.toString());
+            onChangeRef.current(update.state.doc.toString());
           }
         }),
         EditorView.theme({

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Sparkles, ChevronDown, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
 import { copyToClipboard } from '../utils/export';
+import { formatTimestamp } from '../utils/format';
 import type { Prompt } from '../types';
 
 interface PromptsViewProps {
@@ -8,17 +9,6 @@ interface PromptsViewProps {
   onAddPrompt: (title: string, content: string) => void;
   onUpdatePrompt: (promptId: string, fields: Partial<Pick<Prompt, 'title' | 'content'>>) => void;
   onDeletePrompt: (promptId: string) => void;
-}
-
-function formatTimestamp(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDeletePrompt }: PromptsViewProps) {
