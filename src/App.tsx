@@ -7,12 +7,13 @@ import CreateProjectModal from './components/CreateProjectModal';
 import EmptyState from './components/EmptyState';
 import JournalView from './components/JournalView';
 import PromptsView from './components/PromptsView';
+import KanbanView from './components/KanbanView';
 import AuthScreen from './components/AuthScreen';
-import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt } from './store';
+import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
-import { FileText, BookOpen, Sparkles, Loader2 } from 'lucide-react';
-import type { Project, JournalEntry, Prompt } from './types';
+import { FileText, BookOpen, Sparkles, Columns3, Loader2 } from 'lucide-react';
+import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard } from './types';
 
 function App() {
   const { user, loading } = useAuth();
@@ -22,7 +23,7 @@ function App() {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts' | 'kanban'>('documents');
 
   // Load projects when user changes
   useEffect(() => {
@@ -138,6 +139,38 @@ function App() {
     [activeProjectId]
   );
 
+  const handleAddKanbanCard = useCallback(
+    (title: string, column: KanbanColumnId) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => addKanbanCard(prev, activeProjectId, title, column));
+    },
+    [activeProjectId]
+  );
+
+  const handleUpdateKanbanCard = useCallback(
+    (cardId: string, fields: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'tags' | 'dueDate'>>) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => updateKanbanCard(prev, activeProjectId, cardId, fields));
+    },
+    [activeProjectId]
+  );
+
+  const handleMoveKanbanCard = useCallback(
+    (cardId: string, toColumn: KanbanColumnId, newOrder: number) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => moveKanbanCard(prev, activeProjectId, cardId, toColumn, newOrder));
+    },
+    [activeProjectId]
+  );
+
+  const handleDeleteKanbanCard = useCallback(
+    (cardId: string) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => deleteKanbanCard(prev, activeProjectId, cardId));
+    },
+    [activeProjectId]
+  );
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -209,6 +242,22 @@ function App() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab('kanban')}
+                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                  activeTab === 'kanban'
+                    ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
+                    : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
+                }`}
+              >
+                <Columns3 size={15} strokeWidth={1.5} />
+                Kanban
+                {activeProject.kanbanCards.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                    {activeProject.kanbanCards.length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {/* Tab content */}
@@ -244,12 +293,20 @@ function App() {
                 onUpdateEntry={handleUpdateJournalEntry}
                 onDeleteEntry={handleDeleteJournalEntry}
               />
-            ) : (
+            ) : activeTab === 'prompts' ? (
               <PromptsView
                 prompts={activeProject.prompts}
                 onAddPrompt={handleAddPrompt}
                 onUpdatePrompt={handleUpdatePrompt}
                 onDeletePrompt={handleDeletePrompt}
+              />
+            ) : (
+              <KanbanView
+                cards={activeProject.kanbanCards}
+                onAddCard={handleAddKanbanCard}
+                onUpdateCard={handleUpdateKanbanCard}
+                onMoveCard={handleMoveKanbanCard}
+                onDeleteCard={handleDeleteKanbanCard}
               />
             )}
           </div>

@@ -1,4 +1,4 @@
-import type { Project, Document, JournalEntry, Prompt } from './types';
+import type { Project, Document, JournalEntry, Prompt, KanbanCard, KanbanColumnId } from './types';
 import { DOCUMENT_TEMPLATES } from './constants';
 
 const LEGACY_KEY = 'project-docs-data';
@@ -33,7 +33,7 @@ export function loadProjects(userId: string): Project[] {
     }
 
     const data: Project[] = raw ? JSON.parse(raw) : [];
-    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [] }));
+    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [], kanbanCards: p.kanbanCards ?? [] }));
   } catch {
     return [];
   }
@@ -57,6 +57,7 @@ export function createProject(name: string): Project {
     documents,
     journalEntries: [],
     prompts: [],
+    kanbanCards: [],
   };
 }
 
@@ -179,6 +180,84 @@ export function deletePrompt(
     return {
       ...p,
       prompts: p.prompts.filter((pr) => pr.id !== promptId),
+    };
+  });
+}
+
+export function addKanbanCard(
+  projects: Project[],
+  projectId: string,
+  title: string,
+  column: KanbanColumnId
+): Project[] {
+  const now = new Date().toISOString();
+  const card: KanbanCard = {
+    id: generateId(),
+    title: title.trim(),
+    description: '',
+    column,
+    order: Date.now(),
+    priority: 'moyenne',
+    tags: [],
+    dueDate: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return { ...p, kanbanCards: [...p.kanbanCards, card] };
+  });
+}
+
+export function updateKanbanCard(
+  projects: Project[],
+  projectId: string,
+  cardId: string,
+  fields: Partial<Pick<KanbanCard, 'title' | 'description' | 'priority' | 'tags' | 'dueDate'>>
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      kanbanCards: p.kanbanCards.map((c) =>
+        c.id === cardId
+          ? { ...c, ...fields, updatedAt: new Date().toISOString() }
+          : c
+      ),
+    };
+  });
+}
+
+export function moveKanbanCard(
+  projects: Project[],
+  projectId: string,
+  cardId: string,
+  toColumn: KanbanColumnId,
+  newOrder: number
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      kanbanCards: p.kanbanCards.map((c) =>
+        c.id === cardId
+          ? { ...c, column: toColumn, order: newOrder, updatedAt: new Date().toISOString() }
+          : c
+      ),
+    };
+  });
+}
+
+export function deleteKanbanCard(
+  projects: Project[],
+  projectId: string,
+  cardId: string
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      kanbanCards: p.kanbanCards.filter((c) => c.id !== cardId),
     };
   });
 }
