@@ -116,7 +116,7 @@ export default function AuthScreen() {
           <div className="w-16 h-16 mx-auto mb-5 rounded-3xl bg-accent/10 flex items-center justify-center">
             <FolderOpen size={28} strokeWidth={1.5} className="text-accent" />
           </div>
-          <h1 className="text-[24px] font-semibold text-text">Project Docs</h1>
+          <h1 className="text-[24px] font-semibold text-text">Architect</h1>
           <p className="text-[14px] text-text-muted mt-2">
             {mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
           </p>

@@ -1,5 +1,5 @@
 services:
-  project-docs:
+  architect:
     build:
       context: .
       args:

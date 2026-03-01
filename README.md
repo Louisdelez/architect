@@ -1,4 +1,4 @@
-# Project Docs
+# Architect
 
 Application web de gestion de documents projet. Créez un projet et retrouvez instantanément 23 documents pré-configurés (PRD, Roadmap, Technical Spec, etc.) avec un éditeur Markdown intégré. Chaque projet dispose aussi d'un journal de bord pour suivre l'avancement au fil du temps.
 
