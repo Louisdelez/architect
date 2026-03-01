@@ -1,5 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n/I18nContext';
 
 function getInitials(name: string | null): string {
   if (!name) return '?';
@@ -14,6 +15,7 @@ function getInitials(name: string | null): string {
 
 export default function UserMenu() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   if (!user) return null;
 
   return (
@@ -35,7 +37,7 @@ export default function UserMenu() {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-text truncate">
-          {user.displayName || 'Utilisateur'}
+          {user.displayName || t('userMenu.defaultName')}
         </p>
         <p className="text-[11px] text-text-muted truncate">
           {user.email}
@@ -46,7 +48,7 @@ export default function UserMenu() {
       <button
         onClick={logout}
         className="w-8 h-8 flex items-center justify-center rounded-xl text-text-muted hover:text-danger hover:bg-danger/10 apple-transition cursor-pointer shrink-0"
-        title="Déconnexion"
+        title={t('userMenu.logout')}
       >
         <LogOut size={16} strokeWidth={1.5} />
       </button>

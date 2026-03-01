@@ -33,7 +33,18 @@ export function loadProjects(userId: string): Project[] {
     }
 
     const data: Project[] = raw ? JSON.parse(raw) : [];
-    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [], kanbanCards: p.kanbanCards ?? [], calendarEvents: p.calendarEvents ?? [] }));
+    // Migrate old French priority values to English
+    const priorityMap: Record<string, 'high' | 'medium' | 'low'> = { haute: 'high', moyenne: 'medium', basse: 'low' };
+    return data.map((p) => ({
+      ...p,
+      journalEntries: p.journalEntries ?? [],
+      prompts: p.prompts ?? [],
+      kanbanCards: (p.kanbanCards ?? []).map((c) => ({
+        ...c,
+        priority: priorityMap[c.priority] ?? c.priority,
+      })),
+      calendarEvents: p.calendarEvents ?? [],
+    }));
   } catch {
     return [];
   }
@@ -198,7 +209,7 @@ export function addKanbanCard(
     description: '',
     column,
     order: Date.now(),
-    priority: 'moyenne',
+    priority: 'medium',
     tags: [],
     dueDate: null,
     createdAt: now,

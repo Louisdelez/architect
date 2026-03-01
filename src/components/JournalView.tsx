@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import { downloadJournalEntry, downloadAllJournalEntries, copyToClipboard } from '../utils/export';
 import { formatTimestamp } from '../utils/format';
 import { useIsDark } from '../hooks/useIsDark';
+import { useI18n } from '../i18n/I18nContext';
 import type { JournalEntry } from '../types';
 
 interface JournalViewProps {
@@ -94,6 +95,8 @@ function JournalEditor({
 
 /* ── Preview modal for a single journal entry ── */
 function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose: () => void }) {
+  const { t, locale } = useI18n();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
       <div className="absolute inset-0 modal-backdrop" onClick={onClose} />
@@ -102,7 +105,7 @@ function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose:
         <div className="flex items-center justify-center px-5 sm:px-8 py-4 sm:py-5 border-b border-border shrink-0 relative">
           <div className="text-center">
             <h2 className="text-[16px] font-semibold text-text">{entry.title}</h2>
-            <p className="text-[11px] font-mono text-text-muted mt-1">{formatTimestamp(entry.createdAt)}</p>
+            <p className="text-[11px] font-mono text-text-muted mt-1">{formatTimestamp(entry.createdAt, locale)}</p>
           </div>
           <button
             onClick={onClose}
@@ -118,7 +121,7 @@ function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose:
               <div className="w-20 h-20 rounded-[24px] bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center mb-5">
                 <BookOpen size={28} strokeWidth={1.25} className="text-text-muted" />
               </div>
-              <p className="text-[16px] text-text-muted">Cette entrée est vide.</p>
+              <p className="text-[16px] text-text-muted">{t('journal.emptyEntry')}</p>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">
@@ -146,6 +149,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const newTitleRef = useRef<HTMLInputElement>(null);
   const isDark = useIsDark();
+  const { t, tp, locale } = useI18n();
 
   useEffect(() => {
     if (isCreating) newTitleRef.current?.focus();
@@ -199,9 +203,9 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             <BookOpen size={18} strokeWidth={1.5} className="text-text-muted" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold text-text">Journal de bord</h2>
+            <h2 className="text-[15px] font-semibold text-text">{t('journal.title')}</h2>
             <p className="text-[12px] text-text-muted">
-              {entries.length === 0 ? 'Aucune entrée' : `${entries.length} entrée${entries.length > 1 ? 's' : ''}`}
+              {tp('journal.entryCount', entries.length, { count: entries.length })}
             </p>
           </div>
         </div>
@@ -210,10 +214,10 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             <button
               onClick={() => downloadAllJournalEntries(entries)}
               className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-text-muted hover:text-accent hover:bg-accent-light rounded-xl apple-transition cursor-pointer"
-              title="Tout télécharger"
+              title={t('journal.downloadAll')}
             >
               <FileDown size={15} strokeWidth={1.5} />
-              <span className="hidden sm:inline">Tout télécharger</span>
+              <span className="hidden sm:inline">{t('journal.downloadAll')}</span>
             </button>
           )}
           <button
@@ -221,7 +225,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
           >
             <Plus size={15} strokeWidth={2} />
-            <span className="hidden sm:inline">Nouvelle entrée</span>
+            <span className="hidden sm:inline">{t('journal.newEntry')}</span>
           </button>
         </div>
       </div>
@@ -234,14 +238,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             <input
               ref={newTitleRef}
               type="text"
-              placeholder="Titre de l'entrée..."
+              placeholder={t('journal.titlePlaceholder')}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && newTitle.trim()) handleCreate(); }}
               className="w-full px-4 py-2.5 text-[15px] font-medium bg-black/[0.03] dark:bg-white/[0.06] rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 apple-transition placeholder:text-text-muted"
             />
             <textarea
-              placeholder="Contenu (optionnel)..."
+              placeholder={t('journal.contentPlaceholder')}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               rows={4}
@@ -252,14 +256,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                 onClick={() => { setIsCreating(false); setNewTitle(''); setNewContent(''); }}
                 className="px-4 py-2 text-[13px] font-medium text-accent hover:text-accent-hover apple-transition cursor-pointer"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!newTitle.trim()}
                 className="px-5 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed rounded-full apple-transition apple-press cursor-pointer"
               >
-                Ajouter
+                {t('common.add')}
               </button>
             </div>
           </div>
@@ -271,14 +275,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             <div className="w-16 h-16 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center mb-5">
               <BookOpen size={28} strokeWidth={1.5} className="text-text-muted" />
             </div>
-            <p className="text-[15px] font-medium text-text mb-1.5">Aucune entrée</p>
-            <p className="text-[13px] text-text-muted mb-6">Commencez à documenter l'avancement de votre projet</p>
+            <p className="text-[15px] font-medium text-text mb-1.5">{t('journal.noEntries')}</p>
+            <p className="text-[13px] text-text-muted mb-6">{t('journal.noEntriesHint')}</p>
             <button
               onClick={() => setIsCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
             >
               <Plus size={15} strokeWidth={2} />
-              Nouvelle entrée
+              {t('journal.newEntry')}
             </button>
           </div>
         )}
@@ -304,11 +308,11 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 mb-0.5">
                       <span className="text-[11px] font-mono text-text-muted">
-                        {formatTimestamp(entry.createdAt)}
+                        {formatTimestamp(entry.createdAt, locale)}
                       </span>
                       {entry.updatedAt !== entry.createdAt && (
                         <span className="text-[10px] font-mono text-text-muted opacity-60">
-                          (modifié)
+                          {t('common.modified')}
                         </span>
                       )}
                     </div>
@@ -321,7 +325,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                     <button
                       onClick={() => handleCopyEntry(entry)}
                       className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-                      title="Copier le contenu"
+                      title={t('common.copyContent')}
                     >
                       {copiedId === entry.id ? (
                         <Check size={14} strokeWidth={2} className="text-success" />
@@ -339,7 +343,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                     <button
                       onClick={() => downloadJournalEntry(entry)}
                       className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-                      title="Télécharger (.md)"
+                      title={t('journal.downloadEntry')}
                     >
                       <Download size={14} strokeWidth={1.5} />
                     </button>
@@ -350,7 +354,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                           ? 'bg-danger/20 hover:bg-danger/30 text-danger'
                           : 'text-text-muted hover:text-danger hover:bg-danger/10'
                       }`}
-                      title={confirmDeleteId === entry.id ? 'Confirmer la suppression' : 'Supprimer'}
+                      title={confirmDeleteId === entry.id ? t('common.confirmDelete') : t('common.delete')}
                     >
                       <Trash2 size={14} strokeWidth={1.5} />
                     </button>
@@ -360,14 +364,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                 {/* Expanded content */}
                 {isExpanded && (
                   <div className="px-5 pb-5 pt-1 border-t border-border/50 animate-fadeIn">
-                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">Titre</label>
+                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">{t('common.title')}</label>
                     <input
                       type="text"
                       defaultValue={entry.title}
                       onBlur={(e) => handleTitleBlur(entry, e.target.value)}
                       className="w-full px-4 py-2.5 text-[14px] font-medium bg-black/[0.03] dark:bg-white/[0.06] rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 apple-transition"
                     />
-                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mt-4 mb-1.5">Contenu (Markdown)</label>
+                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mt-4 mb-1.5">{t('journal.contentLabel')}</label>
                     <JournalEditor
                       entryId={entry.id}
                       content={entry.content}
@@ -376,7 +380,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                     />
                     {entry.updatedAt !== entry.createdAt && (
                       <p className="text-[11px] font-mono text-text-muted mt-2">
-                        Dernière modification : {formatTimestamp(entry.updatedAt)}
+                        {t('common.lastModified', { date: formatTimestamp(entry.updatedAt, locale) })}
                       </p>
                     )}
                   </div>

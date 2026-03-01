@@ -1,8 +1,10 @@
-import { Plus, FolderOpen, Search, Download, Trash2, Sun, Moon, Monitor, X } from 'lucide-react';
+import { Plus, FolderOpen, Search, Download, Trash2, Sun, Moon, Monitor, X, Globe } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Project } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import UserMenu from './UserMenu';
+import { useI18n } from '../i18n/I18nContext';
+import type { Locale } from '../i18n/types';
 
 interface SidebarProps {
   projects: Project[];
@@ -50,26 +52,27 @@ function ProgressRing({ filled, total }: { filled: number; total: number }) {
   );
 }
 
-const themeOptions = [
-  { value: 'light' as const, label: 'Clair', Icon: Sun },
-  { value: 'dark' as const, label: 'Sombre', Icon: Moon },
-  { value: 'system' as const, label: 'Système', Icon: Monitor },
-];
-
 function ThemeMenu({
   theme,
   onSelect,
   onClose,
+  t,
 }: {
   theme: 'light' | 'dark' | 'system';
   onSelect: (t: 'light' | 'dark' | 'system') => void;
   onClose: () => void;
+  t: (key: any) => string;
 }) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
+  const themeOptions = [
+    { value: 'light' as const, label: t('sidebar.themeLigth'), Icon: Sun },
+    { value: 'dark' as const, label: t('sidebar.themeDark'), Icon: Moon },
+    { value: 'system' as const, label: t('sidebar.themeSystem'), Icon: Monitor },
+  ];
+
   useEffect(() => {
-    // Find the trigger button to position relative to it
     const trigger = document.querySelector<HTMLElement>('[data-theme-trigger]');
     if (trigger) {
       const rect = trigger.getBoundingClientRect();
@@ -105,6 +108,59 @@ function ThemeMenu({
   );
 }
 
+const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: 'fr', label: 'Français' },
+  { value: 'en', label: 'English' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'es', label: 'Español' },
+];
+
+function LanguageMenu({
+  currentLocale,
+  onSelect,
+  onClose,
+}: {
+  currentLocale: Locale;
+  onSelect: (l: Locale) => void;
+  onClose: () => void;
+}) {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const trigger = document.querySelector<HTMLElement>('[data-lang-trigger]');
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      setPos({ top: rect.bottom + 8, left: rect.left });
+    }
+  }, []);
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-50" onClick={onClose} />
+      <div
+        className="dropdown-menu fixed rounded-2xl shadow-lg z-50 py-1.5 w-[180px] border border-border"
+        style={{ top: pos.top, left: pos.left }}
+      >
+        {LOCALE_OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => { onSelect(value); onClose(); }}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] apple-transition cursor-pointer ${
+              currentLocale === value
+                ? 'text-accent font-medium'
+                : 'text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </>,
+    document.body,
+  );
+}
+
 export default function Sidebar({
   projects,
   activeProjectId,
@@ -115,9 +171,11 @@ export default function Sidebar({
   isOpen,
   onClose,
 }: SidebarProps) {
+  const { t, locale, setLocale } = useI18n();
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
   });
@@ -169,29 +227,42 @@ export default function Sidebar({
               <X size={16} strokeWidth={1.5} />
             </button>
             <h1 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
-              Projets
+              {t('sidebar.projects')}
             </h1>
           </div>
           <div className="flex items-center gap-1">
             <div className="relative">
               <button
+                data-lang-trigger
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
+                title={t('language.label')}
+              >
+                <Globe size={16} strokeWidth={1.5} />
+              </button>
+              {showLangMenu && (
+                <LanguageMenu currentLocale={locale} onSelect={setLocale} onClose={() => setShowLangMenu(false)} />
+              )}
+            </div>
+            <div className="relative">
+              <button
                 data-theme-trigger
                 onClick={() => setShowThemeMenu(!showThemeMenu)}
                 className="w-8 h-8 flex items-center justify-center rounded-xl text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-                title="Changer le thème"
+                title={t('sidebar.changeTheme')}
               >
                 {theme === 'light' && <Sun size={16} strokeWidth={1.5} />}
                 {theme === 'dark' && <Moon size={16} strokeWidth={1.5} />}
                 {theme === 'system' && <Monitor size={16} strokeWidth={1.5} />}
               </button>
               {showThemeMenu && (
-                <ThemeMenu theme={theme} onSelect={selectTheme} onClose={() => setShowThemeMenu(false)} />
+                <ThemeMenu theme={theme} onSelect={selectTheme} onClose={() => setShowThemeMenu(false)} t={t} />
               )}
             </div>
             <button
               onClick={onCreateProject}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-              title="Nouveau projet"
+              title={t('sidebar.newProject')}
             >
               <Plus size={18} strokeWidth={2} />
             </button>
@@ -201,7 +272,7 @@ export default function Sidebar({
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             type="text"
-            placeholder="Rechercher..."
+            placeholder={t('sidebar.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-[13px] bg-black/[0.04] dark:bg-white/[0.06] rounded-xl focus:outline-none focus:bg-black/[0.06] dark:focus:bg-white/[0.08] focus:ring-2 focus:ring-accent/20 apple-transition placeholder:text-text-muted"
@@ -213,7 +284,7 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto py-1 px-3">
         {filtered.length === 0 && (
           <p className="text-[13px] text-text-muted text-center py-12">
-            {projects.length === 0 ? 'Aucun projet' : 'Aucun résultat'}
+            {projects.length === 0 ? t('sidebar.noProjects') : t('sidebar.noResults')}
           </p>
         )}
         {filtered.map((project) => {
@@ -252,7 +323,7 @@ export default function Sidebar({
                     className={`p-1.5 rounded-lg apple-transition cursor-pointer ${
                       isActive ? 'hover:bg-white/20' : 'hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
                     }`}
-                    title="Télécharger le projet (.zip)"
+                    title={t('sidebar.downloadProject')}
                   >
                     <Download size={13} className={isActive ? 'text-white/80' : 'text-text-muted'} />
                   </button>
@@ -274,7 +345,7 @@ export default function Sidebar({
                           ? 'hover:bg-white/20'
                           : 'hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
                     }`}
-                    title={confirmDelete === project.id ? 'Confirmer la suppression' : 'Supprimer'}
+                    title={confirmDelete === project.id ? t('common.confirmDelete') : t('sidebar.deleteProject')}
                   >
                     <Trash2
                       size={13}

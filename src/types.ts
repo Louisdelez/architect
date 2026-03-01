@@ -67,7 +67,7 @@ export interface CalendarEvent {
 }
 
 export type KanbanColumnId = 'todo' | 'in-progress' | 'done';
-export type KanbanPriority = 'haute' | 'moyenne' | 'basse';
+export type KanbanPriority = 'high' | 'medium' | 'low';
 
 export interface KanbanTag {
   label: string;

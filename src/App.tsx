@@ -11,6 +11,7 @@ import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
 import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2, Menu, ChevronLeft, List } from 'lucide-react';
 import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard, CalendarEvent, RecurrenceException } from './types';
+import { useI18n } from './i18n/I18nContext';
 
 const JournalView = lazy(() => import('./components/JournalView'));
 const PromptsView = lazy(() => import('./components/PromptsView'));
@@ -19,6 +20,7 @@ const CalendarView = lazy(() => import('./components/CalendarView'));
 
 function App() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
@@ -338,7 +340,7 @@ function App() {
                 }`}
               >
                 <Calendar size={15} strokeWidth={1.5} />
-                <span className="hidden sm:inline">Calendrier</span>
+                <span className="hidden sm:inline">{t('tabs.calendar')}</span>
                 {(activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length) > 0 && (
                   <span className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
                     {activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length}
@@ -383,13 +385,13 @@ function App() {
                       <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center">
                         <FileText size={22} strokeWidth={1.5} className="text-text-muted" />
                       </div>
-                      <p className="text-[14px] text-text-muted mb-3">Sélectionnez un document</p>
+                      <p className="text-[14px] text-text-muted mb-3">{t('documents.selectDocument')}</p>
                       <button
                         onClick={() => setDocListOpen(true)}
                         className="lg:hidden flex items-center gap-2 mx-auto px-4 py-2 text-[13px] font-medium text-accent hover:bg-accent-light rounded-xl apple-transition cursor-pointer"
                       >
                         <List size={15} strokeWidth={1.5} />
-                        Ouvrir la liste
+                        {t('documents.openList')}
                       </button>
                     </div>
                   </div>

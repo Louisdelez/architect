@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { Document } from '../types';
+import { useI18n } from '../i18n/I18nContext';
 
 interface DocumentListProps {
   documents: Document[];
@@ -16,6 +17,8 @@ export default function DocumentList({
   isOpen,
   onClose,
 }: DocumentListProps) {
+  const { t } = useI18n();
+
   return (
     <>
       {/* Backdrop — mobile/tablet only */}
@@ -29,7 +32,7 @@ export default function DocumentList({
       <div className={`w-[280px] h-full bg-surface-dim border-r border-border flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="px-5 pt-6 pb-3 flex items-center justify-between">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
-            Documents
+            {t('documents.title')}
           </h2>
           <button
             onClick={() => onClose?.()}

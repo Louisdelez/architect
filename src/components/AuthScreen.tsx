@@ -1,33 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FolderOpen } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
+import { FolderOpen, Globe } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
+import type { Locale } from '../i18n/types';
 
-function translateFirebaseError(code: string): string {
-  switch (code) {
-    case 'auth/email-already-in-use':
-      return 'Cette adresse e-mail est déjà utilisée.';
-    case 'auth/invalid-email':
-      return 'Adresse e-mail invalide.';
-    case 'auth/weak-password':
-      return 'Le mot de passe doit contenir au moins 6 caractères.';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return 'E-mail ou mot de passe incorrect.';
-    case 'auth/too-many-requests':
-      return 'Trop de tentatives. Réessayez plus tard.';
-    case 'auth/network-request-failed':
-      return 'Erreur réseau. Vérifiez votre connexion.';
-    case 'auth/popup-closed-by-user':
-      return '';
-    default:
-      return 'Une erreur est survenue. Réessayez.';
-  }
-}
+const LOCALE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: 'fr', label: 'Français' },
+  { value: 'en', label: 'English' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'es', label: 'Español' },
+];
 
 export default function AuthScreen() {
   const { register, login, loginWithGoogle } = useAuth();
+  const { t, locale, setLocale } = useI18n();
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,6 +28,29 @@ export default function AuthScreen() {
   useEffect(() => {
     firstInputRef.current?.focus();
   }, [mode]);
+
+  function translateFirebaseError(code: string): string {
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return t('auth.errorEmailInUse');
+      case 'auth/invalid-email':
+        return t('auth.errorInvalidEmail');
+      case 'auth/weak-password':
+        return t('auth.errorWeakPassword');
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return t('auth.errorWrongCredentials');
+      case 'auth/too-many-requests':
+        return t('auth.errorTooManyRequests');
+      case 'auth/network-request-failed':
+        return t('auth.errorNetwork');
+      case 'auth/popup-closed-by-user':
+        return '';
+      default:
+        return t('auth.errorGeneric');
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +76,40 @@ export default function AuthScreen() {
   };
 
   return (
-    <div className="h-full w-full flex items-center justify-center p-4">
+    <div className="h-full w-full flex items-center justify-center p-4 relative">
+      {/* Language selector — top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <div className="relative">
+          <button
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            className="flex items-center gap-2 px-3 py-2 text-[13px] font-medium text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] rounded-xl apple-transition cursor-pointer"
+          >
+            <Globe size={16} strokeWidth={1.5} />
+            <span className="hidden sm:inline">{LOCALE_OPTIONS.find(o => o.value === locale)?.label}</span>
+          </button>
+          {showLangMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowLangMenu(false)} />
+              <div className="dropdown-menu absolute right-0 top-full mt-1 rounded-2xl shadow-lg z-20 py-1.5 w-[160px] border border-border">
+                {LOCALE_OPTIONS.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => { setLocale(value); setShowLangMenu(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] apple-transition cursor-pointer ${
+                      locale === value
+                        ? 'text-accent font-medium'
+                        : 'text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       <div className="w-full max-w-[420px]">
         {/* Logo / branding */}
         <div className="text-center mb-10">
@@ -73,7 +118,7 @@ export default function AuthScreen() {
           </div>
           <h1 className="text-[24px] font-semibold text-text">Project Docs</h1>
           <p className="text-[14px] text-text-muted mt-2">
-            {mode === 'login' ? 'Connectez-vous à votre compte' : 'Créez votre compte'}
+            {mode === 'login' ? t('auth.loginSubtitle') : t('auth.registerSubtitle')}
           </p>
         </div>
 
@@ -84,7 +129,7 @@ export default function AuthScreen() {
               <input
                 ref={firstInputRef}
                 type="text"
-                placeholder="Nom"
+                placeholder={t('auth.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -94,7 +139,7 @@ export default function AuthScreen() {
             <input
               ref={mode === 'login' ? firstInputRef : undefined}
               type="email"
-              placeholder="Adresse e-mail"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -102,7 +147,7 @@ export default function AuthScreen() {
             />
             <input
               type="password"
-              placeholder="Mot de passe"
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -122,15 +167,15 @@ export default function AuthScreen() {
               {submitting
                 ? '...'
                 : mode === 'login'
-                  ? 'Se connecter'
-                  : 'Créer le compte'}
+                  ? t('auth.loginButton')
+                  : t('auth.registerButton')}
             </button>
           </form>
 
           {/* Separator */}
           <div className="flex items-center gap-4 my-6">
             <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
-            <span className="text-[12px] text-text-muted">ou</span>
+            <span className="text-[12px] text-text-muted">{t('common.or')}</span>
             <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
           </div>
 
@@ -154,7 +199,7 @@ export default function AuthScreen() {
               <path fill="#FBBC05" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.0 24.0 0 0 0 0 21.56l7.98-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            Continuer avec Google
+            {t('auth.continueWithGoogle')}
           </button>
 
           <div className="mt-6 text-center">
@@ -163,8 +208,8 @@ export default function AuthScreen() {
               className="text-[13px] text-accent hover:text-accent-hover apple-transition cursor-pointer"
             >
               {mode === 'login'
-                ? 'Pas encore de compte ? Créer un compte'
-                : 'Déjà un compte ? Se connecter'}
+                ? t('auth.noAccount')
+                : t('auth.hasAccount')}
             </button>
           </div>
         </div>

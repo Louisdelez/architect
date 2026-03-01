@@ -26,28 +26,32 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { KanbanCard, KanbanColumnId, KanbanPriority, KanbanTag } from '../types';
+import { useI18n } from '../i18n/I18nContext';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const COLUMNS: { id: KanbanColumnId; label: string; icon: typeof CircleDot }[] = [
-  { id: 'todo', label: 'À faire', icon: CircleDot },
-  { id: 'in-progress', label: 'En cours', icon: Clock },
-  { id: 'done', label: 'Terminé', icon: CheckCircle2 },
+const COLUMN_DEFS: { id: KanbanColumnId; labelKey: 'kanban.columnTodo' | 'kanban.columnInProgress' | 'kanban.columnDone'; icon: typeof CircleDot }[] = [
+  { id: 'todo', labelKey: 'kanban.columnTodo', icon: CircleDot },
+  { id: 'in-progress', labelKey: 'kanban.columnInProgress', icon: Clock },
+  { id: 'done', labelKey: 'kanban.columnDone', icon: CheckCircle2 },
 ];
 
-const PRIORITY_CONFIG: Record<KanbanPriority, { label: string; color: string; bg: string }> = {
-  haute: { label: 'Haute', color: 'text-red-500', bg: 'bg-red-500/10' },
-  moyenne: { label: 'Moyenne', color: 'text-orange-500', bg: 'bg-orange-500/10' },
-  basse: { label: 'Basse', color: 'text-green-500', bg: 'bg-green-500/10' },
+const PRIORITY_KEYS: KanbanPriority[] = ['high', 'medium', 'low'];
+
+const PRIORITY_STYLES: Record<KanbanPriority, { color: string; bg: string }> = {
+  high: { color: 'text-red-500', bg: 'bg-red-500/10' },
+  medium: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
+  low: { color: 'text-green-500', bg: 'bg-green-500/10' },
+};
+
+const PRIORITY_LABEL_KEY: Record<KanbanPriority, 'kanban.priorityHigh' | 'kanban.priorityMedium' | 'kanban.priorityLow'> = {
+  high: 'kanban.priorityHigh',
+  medium: 'kanban.priorityMedium',
+  low: 'kanban.priorityLow',
 };
 
 const TAG_COLORS = [
-  '#3b82f6', // bleu
-  '#8b5cf6', // violet
-  '#ec4899', // rose
-  '#f97316', // orange
-  '#22c55e', // vert
-  '#14b8a6', // teal
+  '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#22c55e', '#14b8a6',
 ];
 
 // ─── KanbanCardItem ──────────────────────────────────────────────────────────
@@ -59,6 +63,7 @@ function KanbanCardItem({
   card: KanbanCard;
   onClick: () => void;
 }) {
+  const { t, locale } = useI18n();
   const {
     attributes,
     listeners,
@@ -72,6 +77,9 @@ function KanbanCardItem({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const priorityLabel = t(PRIORITY_LABEL_KEY[card.priority]);
+  const priorityStyle = PRIORITY_STYLES[card.priority];
 
   return (
     <div
@@ -93,9 +101,9 @@ function KanbanCardItem({
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-text truncate">{card.title}</p>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${PRIORITY_CONFIG[card.priority].bg} ${PRIORITY_CONFIG[card.priority].color}`}>
+            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${priorityStyle.bg} ${priorityStyle.color}`}>
               <Flag size={9} />
-              {PRIORITY_CONFIG[card.priority].label}
+              {priorityLabel}
             </span>
             {card.tags.map((tag, i) => (
               <span
@@ -109,7 +117,7 @@ function KanbanCardItem({
             {card.dueDate && (
               <span className="inline-flex items-center gap-1 text-[10px] text-text-muted">
                 <Calendar size={9} />
-                {new Date(card.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                {new Date(card.dueDate).toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'de' ? 'de-DE' : locale === 'it' ? 'it-IT' : locale === 'es' ? 'es-ES' : 'fr-FR', { day: 'numeric', month: 'short' })}
               </span>
             )}
           </div>
@@ -128,7 +136,7 @@ function KanbanColumn({
   onAddCard,
   onClickCard,
 }: {
-  column: (typeof COLUMNS)[number];
+  column: (typeof COLUMN_DEFS)[number];
   cards: KanbanCard[];
   isOver: boolean;
   onAddCard: (title: string) => void;
@@ -139,6 +147,7 @@ function KanbanColumn({
   const [newTitle, setNewTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const Icon = column.icon;
+  const { t } = useI18n();
 
   useEffect(() => {
     if (isAdding) inputRef.current?.focus();
@@ -163,7 +172,7 @@ function KanbanColumn({
       {/* Header */}
       <div className="flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4">
         <Icon size={14} strokeWidth={1.5} className="text-text-muted" />
-        <span className="text-[12px] font-semibold text-text uppercase tracking-wide">{column.label}</span>
+        <span className="text-[12px] font-semibold text-text uppercase tracking-wide">{t(column.labelKey)}</span>
         <span className="ml-auto text-[11px] font-medium text-text-muted bg-black/[0.04] dark:bg-white/[0.06] px-1.5 py-0.5 rounded-md">
           {cards.length}
         </span>
@@ -195,7 +204,7 @@ function KanbanColumn({
             if (e.key === 'Escape') { setNewTitle(''); setIsAdding(false); }
           }}
           onBlur={handleSubmit}
-          placeholder="Titre de la carte..."
+          placeholder={t('kanban.cardTitlePlaceholder')}
           className="w-full px-3 py-2 text-[13px] rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       )}
@@ -216,6 +225,7 @@ function CardEditModal({
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description);
   const [priority, setPriority] = useState<KanbanPriority>(card.priority);
@@ -268,7 +278,7 @@ function CardEditModal({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Titre"
+            placeholder={t('common.title')}
             className="text-[16px] font-semibold text-text bg-transparent border-b border-border pb-2 focus:outline-none focus:border-accent apple-transition w-full"
           />
 
@@ -276,35 +286,38 @@ function CardEditModal({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description..."
+            placeholder={t('kanban.descriptionPlaceholder')}
             rows={3}
             className="text-[13px] text-text bg-black/[0.02] dark:bg-white/[0.03] rounded-xl p-3 border border-border focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none w-full"
           />
 
           {/* Priority */}
           <div>
-            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">Priorité</label>
+            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">{t('kanban.priority')}</label>
             <div className="flex gap-2">
-              {(Object.entries(PRIORITY_CONFIG) as [KanbanPriority, typeof PRIORITY_CONFIG.haute][]).map(([key, config]) => (
-                <button
-                  key={key}
-                  onClick={() => setPriority(key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer border ${
-                    priority === key
-                      ? `${config.bg} ${config.color} border-current`
-                      : 'border-border text-text-muted hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <Flag size={11} />
-                  {config.label}
-                </button>
-              ))}
+              {PRIORITY_KEYS.map((key) => {
+                const style = PRIORITY_STYLES[key];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setPriority(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer border ${
+                      priority === key
+                        ? `${style.bg} ${style.color} border-current`
+                        : 'border-border text-text-muted hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
+                    }`}
+                  >
+                    <Flag size={11} />
+                    {t(PRIORITY_LABEL_KEY[key])}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Due date */}
           <div>
-            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">Date limite</label>
+            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">{t('kanban.dueDate')}</label>
             <input
               type="date"
               value={dueDate}
@@ -315,7 +328,7 @@ function CardEditModal({
 
           {/* Tags */}
           <div>
-            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">Tags</label>
+            <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wide mb-2 block">{t('kanban.tags')}</label>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {tags.map((tag, i) => (
@@ -337,7 +350,7 @@ function CardEditModal({
                 value={newTagLabel}
                 onChange={(e) => setNewTagLabel(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') addTag(); }}
-                placeholder="Nouveau tag..."
+                placeholder={t('common.newTag')}
                 className="flex-1 text-[12px] px-3 py-1.5 rounded-lg border border-border bg-transparent focus:outline-none focus:ring-2 focus:ring-accent/30"
               />
               <div className="flex gap-1">
@@ -373,13 +386,13 @@ function CardEditModal({
             }`}
           >
             <Trash2 size={13} />
-            {confirmDelete ? 'Confirmer' : 'Supprimer'}
+            {confirmDelete ? t('common.confirm') : t('common.delete')}
           </button>
           <button
             onClick={handleSave}
             className="px-4 py-1.5 text-[13px] font-medium rounded-xl bg-accent text-white hover:bg-accent/90 apple-transition cursor-pointer"
           >
-            Enregistrer
+            {t('common.save')}
           </button>
         </div>
       </div>
@@ -390,13 +403,15 @@ function CardEditModal({
 // ─── DragOverlayCard ─────────────────────────────────────────────────────────
 
 function DragOverlayCard({ card }: { card: KanbanCard }) {
+  const { t } = useI18n();
+  const priorityStyle = PRIORITY_STYLES[card.priority];
   return (
     <div className="rounded-xl bg-surface p-4 shadow-lg border border-border rotate-2 w-[280px]">
       <p className="text-[13px] font-medium text-text truncate">{card.title}</p>
       <div className="flex items-center gap-2 mt-2">
-        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${PRIORITY_CONFIG[card.priority].bg} ${PRIORITY_CONFIG[card.priority].color}`}>
+        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${priorityStyle.bg} ${priorityStyle.color}`}>
           <Flag size={9} />
-          {PRIORITY_CONFIG[card.priority].label}
+          {t(PRIORITY_LABEL_KEY[card.priority])}
         </span>
       </div>
     </div>
@@ -416,6 +431,7 @@ interface KanbanViewProps {
 export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard, onDeleteCard }: KanbanViewProps) {
   const [activeCard, setActiveCard] = useState<KanbanCard | null>(null);
   const [editingCard, setEditingCard] = useState<KanbanCard | null>(null);
+  const { t, tp } = useI18n();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -436,12 +452,11 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
     const activeCardData = cards.find((c) => c.id === active.id);
     if (!activeCardData) return;
 
-    // Determine target column
     let targetColumn: KanbanColumnId;
     const overCard = cards.find((c) => c.id === over.id);
     if (overCard) {
       targetColumn = overCard.column;
-    } else if (COLUMNS.some((col) => col.id === over.id)) {
+    } else if (COLUMN_DEFS.some((col) => col.id === over.id)) {
       targetColumn = over.id as KanbanColumnId;
     } else {
       return;
@@ -465,12 +480,11 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
     const draggedCard = cards.find((c) => c.id === active.id);
     if (!draggedCard) return;
 
-    // Determine target column
     let targetColumn: KanbanColumnId;
     const overCard = cards.find((c) => c.id === over.id);
     if (overCard) {
       targetColumn = overCard.column;
-    } else if (COLUMNS.some((col) => col.id === over.id)) {
+    } else if (COLUMN_DEFS.some((col) => col.id === over.id)) {
       targetColumn = over.id as KanbanColumnId;
     } else {
       return;
@@ -501,7 +515,7 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
     const overCard = cards.find((c) => c.id === over.id);
     if (overCard) {
       setOverColumnId(overCard.column);
-    } else if (COLUMNS.some((col) => col.id === over.id)) {
+    } else if (COLUMN_DEFS.some((col) => col.id === over.id)) {
       setOverColumnId(over.id as KanbanColumnId);
     }
   };
@@ -513,10 +527,10 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
         <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
           <Columns3 size={16} strokeWidth={1.5} className="text-accent" />
         </div>
-        <h2 className="text-[15px] font-semibold text-text">Kanban</h2>
+        <h2 className="text-[15px] font-semibold text-text">{t('kanban.title')}</h2>
         {cards.length > 0 && (
           <span className="text-[11px] font-medium text-text-muted bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-md">
-            {cards.length} carte{cards.length > 1 ? 's' : ''}
+            {tp('kanban.cardCount', cards.length, { count: cards.length })}
           </span>
         )}
       </div>
@@ -531,7 +545,7 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
           onDragEnd={(e) => { handleDragEnd(e); setOverColumnId(null); }}
         >
           <div className="flex gap-4 h-full">
-            {COLUMNS.map((column) => (
+            {COLUMN_DEFS.map((column) => (
               <KanbanColumn
                 key={column.id}
                 column={column}

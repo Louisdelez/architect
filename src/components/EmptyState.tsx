@@ -1,4 +1,5 @@
 import { FolderPlus, Menu } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 interface EmptyStateProps {
   hasProjects: boolean;
@@ -7,6 +8,8 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ hasProjects, onCreateProject, onOpenSidebar }: EmptyStateProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-surface rounded-r-[16px] animate-fadeIn">
       {/* Hamburger for mobile/tablet when sidebar is hidden */}
@@ -23,12 +26,12 @@ export default function EmptyState({ hasProjects, onCreateProject, onOpenSidebar
           <FolderPlus size={36} strokeWidth={1.25} className="text-text-muted" />
         </div>
         <h2 className="text-[20px] font-semibold text-text mb-3">
-          {hasProjects ? 'Sélectionnez un projet' : 'Aucun projet'}
+          {hasProjects ? t('emptyState.selectProject') : t('emptyState.noProjects')}
         </h2>
         <p className="text-[14px] text-text-muted mb-8 leading-relaxed">
           {hasProjects
-            ? 'Choisissez un projet dans la barre latérale pour commencer.'
-            : 'Créez votre premier projet pour commencer à organiser vos documents.'}
+            ? t('emptyState.selectProjectHint')
+            : t('emptyState.noProjectsHint')}
         </p>
         {hasProjects && onOpenSidebar && (
           <button
@@ -36,7 +39,7 @@ export default function EmptyState({ hasProjects, onCreateProject, onOpenSidebar
             className="lg:hidden inline-flex items-center gap-2.5 px-6 py-3 text-[14px] font-medium text-accent hover:bg-accent-light rounded-full apple-transition cursor-pointer mb-4"
           >
             <Menu size={17} strokeWidth={1.5} />
-            Ouvrir les projets
+            {t('emptyState.openProjects')}
           </button>
         )}
         {!hasProjects && (
@@ -45,7 +48,7 @@ export default function EmptyState({ hasProjects, onCreateProject, onOpenSidebar
             className="inline-flex items-center gap-2.5 px-7 py-3 text-[14px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer shadow-md"
           >
             <FolderPlus size={17} strokeWidth={1.5} />
-            Créer un projet
+            {t('emptyState.createProject')}
           </button>
         )}
       </div>

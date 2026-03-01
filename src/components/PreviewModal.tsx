@@ -2,6 +2,7 @@ import { X, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Document } from '../types';
+import { useI18n } from '../i18n/I18nContext';
 
 interface PreviewModalProps {
   document: Document;
@@ -9,6 +10,8 @@ interface PreviewModalProps {
 }
 
 export default function PreviewModal({ document, onClose }: PreviewModalProps) {
+  const { t } = useI18n();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
       {/* Backdrop */}
@@ -37,7 +40,7 @@ export default function PreviewModal({ document, onClose }: PreviewModalProps) {
               <div className="w-20 h-20 rounded-[24px] bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center mb-5">
                 <FileText size={28} strokeWidth={1.25} className="text-text-muted" />
               </div>
-              <p className="text-[16px] text-text-muted">Ce document est vide.</p>
+              <p className="text-[16px] text-text-muted">{t('preview.emptyDocument')}</p>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">

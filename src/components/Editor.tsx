@@ -8,6 +8,7 @@ import { Download, Eye, Copy, FileDown, Check } from 'lucide-react';
 import type { Document } from '../types';
 import { copyToClipboard, downloadMarkdown, downloadPdf } from '../utils/export';
 import { useIsDark } from '../hooks/useIsDark';
+import { useI18n } from '../i18n/I18nContext';
 
 interface EditorProps {
   document: Document;
@@ -21,6 +22,7 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
   const [copied, setCopied] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const isDark = useIsDark();
+  const { t, tp } = useI18n();
   const onChangeRef = useRef(onContentChange);
   onChangeRef.current = onContentChange;
 
@@ -97,6 +99,8 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const lineCount = document.content.split('\n').length;
+
   return (
     <div className="flex-1 flex flex-col h-full min-w-0 bg-surface">
       {/* Toolbar */}
@@ -105,15 +109,15 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
           <h2 className="text-[14px] sm:text-[16px] font-semibold text-text truncate">{document.name}</h2>
           <p className="text-[12px] text-text-muted mt-1 hidden sm:block">
             {document.content.trim().length > 0
-              ? `${document.content.split('\n').length} lignes`
-              : 'Document vide'}
+              ? tp('editor.lineCount', lineCount, { count: lineCount })
+              : t('editor.emptyDocument')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
             className="w-9 h-9 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
-            title="Copier dans le presse-papier"
+            title={t('editor.copyToClipboard')}
           >
             {copied ? (
               <Check size={16} className="text-success" strokeWidth={2} />
@@ -126,7 +130,7 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
             <button
               onClick={() => setShowDownloadMenu(!showDownloadMenu)}
               className="w-9 h-9 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
-              title="Télécharger"
+              title={t('editor.download')}
             >
               <Download size={16} strokeWidth={1.5} />
             </button>
@@ -164,7 +168,7 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
           <button
             onClick={onPreview}
             className="flex items-center gap-2 px-3 sm:px-5 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
-            title="Prévisualiser"
+            title={t('editor.preview')}
           >
             <Eye size={15} />
             <span className="hidden sm:inline">Preview</span>

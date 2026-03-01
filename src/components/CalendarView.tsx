@@ -11,11 +11,11 @@ import {
   isSameMonth, isToday,
   getHours, getMinutes,
 } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Columns3, Trash2, X, Repeat } from 'lucide-react';
 import type { CalendarEvent, CalendarViewMode, KanbanCard, RecurrenceRule, RecurrenceFrequency, RecurrenceEnd, MonthlyMode, RecurrenceException } from '../types';
 import { expandAllEvents, getViewDateRange } from '../recurrence';
 import type { CalendarItem } from '../recurrence';
+import { useI18n } from '../i18n/I18nContext';
 
 const EVENT_COLORS = [
   '#007aff', '#ff9500', '#ff3b30', '#34c759',
@@ -87,16 +87,17 @@ interface RecurrenceActionDialogProps {
 }
 
 function RecurrenceActionDialog({ actionLabel, onThis, onAll, onCancel }: RecurrenceActionDialogProps) {
+  const { t } = useI18n();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 modal-backdrop" onClick={onCancel} />
       <div className="modal-content relative w-full max-w-sm bg-surface rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--shadow-modal)' }}>
         <div className="px-6 pt-5 pb-2">
           <h3 className="text-[15px] font-semibold text-text text-center">
-            {actionLabel} l'événement récurrent
+            {t('calendar.recurrenceActionTitle', { action: actionLabel })}
           </h3>
           <p className="text-[13px] text-text-muted text-center mt-1">
-            Cet événement fait partie d'une série.
+            {t('calendar.recurrenceActionHint')}
           </p>
         </div>
         <div className="p-4 space-y-2">
@@ -104,13 +105,13 @@ function RecurrenceActionDialog({ actionLabel, onThis, onAll, onCancel }: Recurr
             onClick={onThis}
             className="w-full px-4 py-2.5 text-[13px] font-medium rounded-xl bg-black/[0.04] dark:bg-white/[0.06] text-text hover:bg-black/[0.07] dark:hover:bg-white/[0.1] apple-transition cursor-pointer"
           >
-            Cet événement uniquement
+            {t('calendar.thisEventOnly')}
           </button>
           <button
             onClick={onAll}
             className="w-full px-4 py-2.5 text-[13px] font-medium rounded-xl bg-black/[0.04] dark:bg-white/[0.06] text-text hover:bg-black/[0.07] dark:hover:bg-white/[0.1] apple-transition cursor-pointer"
           >
-            Tous les événements
+            {t('calendar.allEvents')}
           </button>
         </div>
         <div className="px-4 pb-4">
@@ -118,7 +119,7 @@ function RecurrenceActionDialog({ actionLabel, onThis, onAll, onCancel }: Recurr
             onClick={onCancel}
             className="w-full px-4 py-2 text-[13px] font-medium rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
           >
-            Annuler
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -127,24 +128,6 @@ function RecurrenceActionDialog({ actionLabel, onThis, onAll, onCancel }: Recurr
 }
 
 // ─── RecurrencePicker ────────────────────────────────────────────
-const FREQ_OPTIONS: { value: 'none' | RecurrenceFrequency | 'custom'; label: string }[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'daily', label: 'Quotidien' },
-  { value: 'weekly', label: 'Hebdomadaire' },
-  { value: 'monthly', label: 'Mensuel' },
-  { value: 'yearly', label: 'Annuel' },
-  { value: 'custom', label: 'Personnalisé' },
-];
-
-const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-const WEEKDAY_NAMES = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-const FREQ_UNIT_LABELS: Record<RecurrenceFrequency, string> = {
-  daily: 'jour(s)',
-  weekly: 'semaine(s)',
-  monthly: 'mois',
-  yearly: 'an(s)',
-};
-
 interface RecurrencePickerProps {
   rule: RecurrenceRule | undefined;
   onChange: (rule: RecurrenceRule | undefined) => void;
@@ -152,6 +135,27 @@ interface RecurrencePickerProps {
 }
 
 function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) {
+  const { t } = useI18n();
+
+  const FREQ_OPTIONS: { value: 'none' | RecurrenceFrequency | 'custom'; label: string }[] = [
+    { value: 'none', label: t('calendar.recurrenceNone') },
+    { value: 'daily', label: t('calendar.recurrenceDaily') },
+    { value: 'weekly', label: t('calendar.recurrenceWeekly') },
+    { value: 'monthly', label: t('calendar.recurrenceMonthly') },
+    { value: 'yearly', label: t('calendar.recurrenceYearly') },
+    { value: 'custom', label: t('calendar.recurrenceCustom') },
+  ];
+
+  const weekdayLabels = t('calendar.weekdayLabels').split(',');
+  const weekdayNames = t('calendar.weekdayNames').split(',');
+
+  const FREQ_UNIT_LABELS: Record<RecurrenceFrequency, string> = {
+    daily: t('calendar.freqDays'),
+    weekly: t('calendar.freqWeeks'),
+    monthly: t('calendar.freqMonths'),
+    yearly: t('calendar.freqYears'),
+  };
+
   const preset = !rule ? 'none'
     : (rule.interval === 1 && !rule.weekdays?.length && !rule.monthlyMode) ? rule.frequency
     : 'custom';
@@ -177,7 +181,11 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
     next.setDate(next.getDate() + 7);
     return next.getMonth() !== eventDateObj.getMonth();
   }, [eventDateObj]);
-  const nthLabel = eventNth === 1 ? '1er' : isLastOccurrence ? 'dernier' : `${eventNth}e`;
+  const nthLabel = eventNth === 1
+    ? t('calendar.nthFirst')
+    : isLastOccurrence
+    ? t('calendar.nthLast')
+    : t('calendar.nthOther', { n: eventNth });
 
   const buildRule = useCallback((): RecurrenceRule | undefined => {
     if (mode === 'none') return undefined;
@@ -221,7 +229,7 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-[12px] font-medium text-text-muted mb-1.5">Récurrence</label>
+        <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.recurrenceLabel')}</label>
         <select
           value={mode}
           onChange={(e) => handleModeChange(e.target.value)}
@@ -237,7 +245,7 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
         <div className="space-y-3 pl-1 border-l-2 border-accent/20 ml-1">
           {/* Frequency + interval */}
           <div className="flex items-center gap-2 pl-3">
-            <span className="text-[12px] text-text-muted shrink-0">Tous les</span>
+            <span className="text-[12px] text-text-muted shrink-0">{t('calendar.every')}</span>
             <input
               type="number"
               min={1}
@@ -260,9 +268,9 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
           {/* Weekly: weekday toggles */}
           {freq === 'weekly' && (
             <div className="pl-3">
-              <div className="text-[11px] text-text-muted mb-1.5">Jours de la semaine</div>
+              <div className="text-[11px] text-text-muted mb-1.5">{t('calendar.weekdays')}</div>
               <div className="flex gap-1">
-                {WEEKDAY_LABELS.map((label, i) => (
+                {weekdayLabels.map((label, i) => (
                   <button
                     key={i}
                     type="button"
@@ -291,7 +299,7 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
                   onChange={() => setMonthlyMode({ type: 'dayOfMonth', day: eventDayOfMonth })}
                   className="accent-accent"
                 />
-                <span className="text-[12px] text-text">Le {eventDayOfMonth} du mois</span>
+                <span className="text-[12px] text-text">{t('calendar.dayOfMonth', { day: eventDayOfMonth })}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -301,7 +309,7 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
                   onChange={() => setMonthlyMode({ type: 'nthWeekday', nth: isLastOccurrence ? 5 : eventNth, weekday: eventWeekday })}
                   className="accent-accent"
                 />
-                <span className="text-[12px] text-text">Le {nthLabel} {WEEKDAY_NAMES[eventWeekday]}</span>
+                <span className="text-[12px] text-text">{t('calendar.nthWeekday', { nth: nthLabel, weekday: weekdayNames[eventWeekday] })}</span>
               </label>
             </div>
           )}
@@ -311,15 +319,15 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
       {/* End condition (shown for any recurrence mode except none) */}
       {mode !== 'none' && (
         <div className="space-y-2">
-          <label className="block text-[12px] font-medium text-text-muted">Fin</label>
+          <label className="block text-[12px] font-medium text-text-muted">{t('calendar.endCondition')}</label>
           <div className="space-y-1.5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="endType" checked={endType === 'never'} onChange={() => setEndType('never')} className="accent-accent" />
-              <span className="text-[12px] text-text">Jamais</span>
+              <span className="text-[12px] text-text">{t('calendar.endNever')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="endType" checked={endType === 'count'} onChange={() => setEndType('count')} className="accent-accent" />
-              <span className="text-[12px] text-text">Après</span>
+              <span className="text-[12px] text-text">{t('calendar.endAfter')}</span>
               {endType === 'count' && (
                 <input
                   type="number"
@@ -330,11 +338,11 @@ function RecurrencePicker({ rule, onChange, eventDate }: RecurrencePickerProps) 
                   className="w-16 px-2 py-1 text-[12px] rounded-lg bg-black/[0.03] dark:bg-white/[0.06] border border-border text-text text-center focus:outline-none focus:ring-2 focus:ring-accent/30"
                 />
               )}
-              {endType === 'count' && <span className="text-[12px] text-text">occurrences</span>}
+              {endType === 'count' && <span className="text-[12px] text-text">{t('calendar.endOccurrences')}</span>}
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="endType" checked={endType === 'until'} onChange={() => setEndType('until')} className="accent-accent" />
-              <span className="text-[12px] text-text">Jusqu'au</span>
+              <span className="text-[12px] text-text">{t('calendar.endUntil')}</span>
               {endType === 'until' && (
                 <input
                   type="date"
@@ -388,6 +396,7 @@ interface EventModalProps {
 }
 
 function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurrenceDate, onSave, onUpdate, onDelete, onUpdateOccurrence, onDeleteOccurrence, onClose }: EventModalProps) {
+  const { t } = useI18n();
   const [title, setTitle] = useState(event?.title ?? '');
   const [description, setDescription] = useState(event?.description ?? '');
   const [date, setDate] = useState(event?.date ?? defaultDate ?? format(new Date(), 'yyyy-MM-dd'));
@@ -445,8 +454,8 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-[15px] font-semibold text-text">
             {event
-              ? isOccurrence ? 'Modifier cette occurrence' : 'Modifier l\u2019événement'
-              : 'Nouvel événement'}
+              ? isOccurrence ? t('calendar.editOccurrence') : t('calendar.editEvent')
+              : t('calendar.newEvent')}
           </h2>
           <button onClick={onClose} className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer">
             <X size={16} />
@@ -456,30 +465,30 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
         {/* Body */}
         <div className="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
           <div>
-            <label className="block text-[12px] font-medium text-text-muted mb-1.5">Titre</label>
+            <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.eventTitleLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre de l'événement"
+              placeholder={t('calendar.eventTitlePlaceholder')}
               className="w-full px-3 py-2 text-[13px] rounded-xl bg-black/[0.03] dark:bg-white/[0.06] border border-border text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-text-muted mb-1.5">Description</label>
+            <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.eventDescriptionLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optionnel)"
+              placeholder={t('calendar.eventDescriptionPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 text-[13px] rounded-xl bg-black/[0.03] dark:bg-white/[0.06] border border-border text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-text-muted mb-1.5">Date</label>
+            <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.dateLabel')}</label>
             <input
               type="date"
               value={date}
@@ -490,7 +499,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
 
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[12px] font-medium text-text-muted mb-1.5">Début</label>
+              <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.startLabel')}</label>
               <input
                 type="time"
                 value={startTime}
@@ -499,7 +508,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
               />
             </div>
             <div className="flex-1">
-              <label className="block text-[12px] font-medium text-text-muted mb-1.5">Fin</label>
+              <label className="block text-[12px] font-medium text-text-muted mb-1.5">{t('calendar.endLabel')}</label>
               <input
                 type="time"
                 value={endTime}
@@ -510,7 +519,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
           </div>
 
           <div>
-            <label className="block text-[12px] font-medium text-text-muted mb-2">Couleur</label>
+            <label className="block text-[12px] font-medium text-text-muted mb-2">{t('calendar.colorLabel')}</label>
             <div className="flex gap-2">
               {EVENT_COLORS.map((c) => (
                 <button
@@ -546,7 +555,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
                 }`}
               >
                 <Trash2 size={13} />
-                {confirmDelete ? 'Confirmer' : isOccurrence ? 'Supprimer cette occurrence' : 'Supprimer'}
+                {confirmDelete ? t('common.confirm') : isOccurrence ? t('calendar.deleteOccurrence') : t('common.delete')}
               </button>
             )}
           </div>
@@ -555,7 +564,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
             disabled={!title.trim()}
             className="px-4 py-1.5 text-[13px] font-medium rounded-xl bg-accent text-white hover:bg-accent-hover apple-transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {event ? 'Enregistrer' : 'Créer'}
+            {event ? t('common.save') : t('calendar.create')}
           </button>
         </div>
       </div>
@@ -576,9 +585,10 @@ interface YearGridProps {
 }
 
 function YearGrid({ currentDate, items, onDrillDown }: YearGridProps) {
+  const { t, dateFnsLocale } = useI18n();
   const year = currentDate.getFullYear();
   const months = Array.from({ length: 12 }, (_, i) => new Date(year, i, 1));
-  const dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  const dayLabels = t('calendar.monthDayLabelsFull').split(',');
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -606,7 +616,7 @@ function YearGrid({ currentDate, items, onDrillDown }: YearGridProps) {
             className="p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer text-left"
           >
             <div className="text-[12px] font-semibold text-text mb-2 capitalize">
-              {format(monthDate, 'MMMM', { locale: fr })}
+              {format(monthDate, 'MMMM', { locale: dateFnsLocale })}
             </div>
             <div className="grid grid-cols-7 gap-px">
               {dayLabels.map((d, i) => (
@@ -653,12 +663,13 @@ interface MonthGridProps {
 }
 
 function MonthGrid({ currentDate, items, onDrillDown, onClickEvent, dragState, onDragStart }: MonthGridProps) {
+  const { t } = useI18n();
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
-  const dayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  const dayLabels = t('calendar.monthDayLabelsShort').split(',');
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, CalendarItem[]>();
@@ -779,6 +790,7 @@ interface WeekGridProps {
 }
 
 function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onDragStart }: WeekGridProps) {
+  const { dateFnsLocale } = useI18n();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -812,7 +824,7 @@ function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, on
           return (
             <div key={day.toISOString()} className="flex-1 min-w-[100px] sm:min-w-0 text-center py-2 border-l border-border">
               <div className={`text-[11px] font-medium ${today ? 'text-accent' : 'text-text-muted'}`}>
-                {format(day, 'EEE', { locale: fr }).replace('.', '')}
+                {format(day, 'EEE', { locale: dateFnsLocale }).replace('.', '')}
               </div>
               <div className={`text-[18px] font-semibold w-8 h-8 mx-auto flex items-center justify-center rounded-full ${
                 today ? 'bg-accent text-white' : 'text-text'
@@ -1000,6 +1012,7 @@ interface DayGridProps {
 }
 
 function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onDragStart }: DayGridProps) {
+  const { dateFnsLocale } = useI18n();
   const dateStr = format(currentDate, 'yyyy-MM-dd');
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -1018,7 +1031,7 @@ function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onD
       {/* Day header */}
       <div className="text-center py-3 border-b border-border shrink-0">
         <div className={`text-[12px] font-medium capitalize ${today ? 'text-accent' : 'text-text-muted'}`}>
-          {format(currentDate, 'EEEE', { locale: fr })}
+          {format(currentDate, 'EEEE', { locale: dateFnsLocale })}
         </div>
         <div className={`text-[28px] font-semibold w-11 h-11 mx-auto flex items-center justify-center rounded-full ${
           today ? 'bg-accent text-white' : 'text-text'
@@ -1026,7 +1039,7 @@ function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onD
           {currentDate.getDate()}
         </div>
         <div className="text-[12px] text-text-muted capitalize mt-0.5">
-          {format(currentDate, 'MMMM yyyy', { locale: fr })}
+          {format(currentDate, 'MMMM yyyy', { locale: dateFnsLocale })}
         </div>
       </div>
 
@@ -1185,6 +1198,7 @@ function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onD
 
 // ─── CalendarView (main) ────────────────────────────────────────
 export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdateEvent, onDeleteEvent, onUpdateOccurrence, onDeleteOccurrence }: CalendarViewProps) {
+  const { t, dateFnsLocale } = useI18n();
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -1442,24 +1456,24 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
   const headerTitle = useMemo(() => {
     switch (viewMode) {
       case 'year': return format(currentDate, 'yyyy');
-      case 'month': return format(currentDate, 'MMMM yyyy', { locale: fr });
+      case 'month': return format(currentDate, 'MMMM yyyy', { locale: dateFnsLocale });
       case 'week': {
         const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
         const we = addDays(ws, 6);
         if (ws.getMonth() === we.getMonth()) {
-          return `${format(ws, 'd', { locale: fr })} – ${format(we, 'd MMMM yyyy', { locale: fr })}`;
+          return `${format(ws, 'd', { locale: dateFnsLocale })} – ${format(we, 'd MMMM yyyy', { locale: dateFnsLocale })}`;
         }
-        return `${format(ws, 'd MMM', { locale: fr })} – ${format(we, 'd MMM yyyy', { locale: fr })}`;
+        return `${format(ws, 'd MMM', { locale: dateFnsLocale })} – ${format(we, 'd MMM yyyy', { locale: dateFnsLocale })}`;
       }
-      case 'day': return format(currentDate, 'EEEE d MMMM yyyy', { locale: fr });
+      case 'day': return format(currentDate, 'EEEE d MMMM yyyy', { locale: dateFnsLocale });
     }
-  }, [viewMode, currentDate]);
+  }, [viewMode, currentDate, dateFnsLocale]);
 
   const viewLabels: { mode: CalendarViewMode; label: string; short: string }[] = [
-    { mode: 'year', label: 'Année', short: 'A' },
-    { mode: 'month', label: 'Mois', short: 'M' },
-    { mode: 'week', label: 'Semaine', short: 'S' },
-    { mode: 'day', label: 'Jour', short: 'J' },
+    { mode: 'year', label: t('calendar.viewYear'), short: t('calendar.viewYearShort') },
+    { mode: 'month', label: t('calendar.viewMonth'), short: t('calendar.viewMonthShort') },
+    { mode: 'week', label: t('calendar.viewWeek'), short: t('calendar.viewWeekShort') },
+    { mode: 'day', label: t('calendar.viewDay'), short: t('calendar.viewDayShort') },
   ];
 
   return (
@@ -1483,7 +1497,7 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
               onClick={goToday}
               className="px-3 py-1 text-[12px] font-medium rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
             >
-              Aujourd'hui
+              {t('calendar.today')}
             </button>
             <button
               onClick={() => navigate(1)}
@@ -1503,7 +1517,7 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
             className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-xl bg-accent text-white hover:bg-accent-hover apple-transition cursor-pointer shrink-0"
           >
             <Plus size={14} />
-            <span className="hidden sm:inline">Événement</span>
+            <span className="hidden sm:inline">{t('calendar.event')}</span>
           </button>
         </div>
 
@@ -1574,9 +1588,9 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
       {recurrenceAction && (
         <RecurrenceActionDialog
           actionLabel={
-            recurrenceAction.action === 'edit' ? 'Modifier'
-            : recurrenceAction.action === 'delete' ? 'Supprimer'
-            : 'Déplacer'
+            recurrenceAction.action === 'edit' ? t('calendar.recurrenceEdit')
+            : recurrenceAction.action === 'delete' ? t('calendar.recurrenceDelete')
+            : t('calendar.recurrenceMove')
           }
           onThis={handleRecurrenceThis}
           onAll={handleRecurrenceAll}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, Sparkles, ChevronDown, ChevronRight, Copy, Check, Trash2 } from 'lucide-react';
 import { copyToClipboard } from '../utils/export';
 import { formatTimestamp } from '../utils/format';
+import { useI18n } from '../i18n/I18nContext';
 import type { Prompt } from '../types';
 
 interface PromptsViewProps {
@@ -19,6 +20,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const newTitleRef = useRef<HTMLInputElement>(null);
+  const { t, tp, locale } = useI18n();
 
   useEffect(() => {
     if (isCreating) newTitleRef.current?.focus();
@@ -71,9 +73,9 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
             <Sparkles size={18} strokeWidth={1.5} className="text-text-muted" />
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold text-text">Prompts</h2>
+            <h2 className="text-[15px] font-semibold text-text">{t('prompts.title')}</h2>
             <p className="text-[12px] text-text-muted">
-              {prompts.length === 0 ? 'Aucun prompt' : `${prompts.length} prompt${prompts.length > 1 ? 's' : ''}`}
+              {tp('prompts.promptCount', prompts.length, { count: prompts.length })}
             </p>
           </div>
         </div>
@@ -82,7 +84,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
           className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
         >
           <Plus size={15} strokeWidth={2} />
-          <span className="hidden sm:inline">Nouveau prompt</span>
+          <span className="hidden sm:inline">{t('prompts.newPrompt')}</span>
         </button>
       </div>
 
@@ -94,14 +96,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
             <input
               ref={newTitleRef}
               type="text"
-              placeholder="Titre du prompt..."
+              placeholder={t('prompts.titlePlaceholder')}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && newTitle.trim()) handleCreate(); }}
               className="w-full px-4 py-2.5 text-[15px] font-medium bg-black/[0.03] dark:bg-white/[0.06] rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 apple-transition placeholder:text-text-muted"
             />
             <textarea
-              placeholder="Contenu du prompt..."
+              placeholder={t('prompts.contentPlaceholder')}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               rows={6}
@@ -112,14 +114,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                 onClick={() => { setIsCreating(false); setNewTitle(''); setNewContent(''); }}
                 className="px-4 py-2 text-[13px] font-medium text-accent hover:text-accent-hover apple-transition cursor-pointer"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!newTitle.trim()}
                 className="px-5 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed rounded-full apple-transition apple-press cursor-pointer"
               >
-                Ajouter
+                {t('common.add')}
               </button>
             </div>
           </div>
@@ -131,14 +133,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
             <div className="w-16 h-16 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center mb-5">
               <Sparkles size={28} strokeWidth={1.5} className="text-text-muted" />
             </div>
-            <p className="text-[15px] font-medium text-text mb-1.5">Aucun prompt</p>
-            <p className="text-[13px] text-text-muted mb-6">Créez et stockez vos prompts pour les copier en un clic</p>
+            <p className="text-[15px] font-medium text-text mb-1.5">{t('prompts.noPrompts')}</p>
+            <p className="text-[13px] text-text-muted mb-6">{t('prompts.noPromptsHint')}</p>
             <button
               onClick={() => setIsCreating(true)}
               className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
             >
               <Plus size={15} strokeWidth={2} />
-              Nouveau prompt
+              {t('prompts.newPrompt')}
             </button>
           </div>
         )}
@@ -164,11 +166,11 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5 mb-0.5">
                       <span className="text-[11px] font-mono text-text-muted">
-                        {formatTimestamp(prompt.createdAt)}
+                        {formatTimestamp(prompt.createdAt, locale)}
                       </span>
                       {prompt.updatedAt !== prompt.createdAt && (
                         <span className="text-[10px] font-mono text-text-muted opacity-60">
-                          (modifié)
+                          {t('common.modified')}
                         </span>
                       )}
                     </div>
@@ -181,7 +183,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                     <button
                       onClick={() => handleCopy(prompt)}
                       className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-                      title="Copier le contenu"
+                      title={t('common.copyContent')}
                     >
                       {copiedId === prompt.id ? (
                         <Check size={14} strokeWidth={2} className="text-success" />
@@ -196,7 +198,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                           ? 'bg-danger/20 hover:bg-danger/30 text-danger'
                           : 'text-text-muted hover:text-danger hover:bg-danger/10'
                       }`}
-                      title={confirmDeleteId === prompt.id ? 'Confirmer la suppression' : 'Supprimer'}
+                      title={confirmDeleteId === prompt.id ? t('common.confirmDelete') : t('common.delete')}
                     >
                       <Trash2 size={14} strokeWidth={1.5} />
                     </button>
@@ -206,14 +208,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                 {/* Expanded content */}
                 {isExpanded && (
                   <div className="px-5 pb-5 pt-1 border-t border-border/50 animate-fadeIn">
-                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">Titre</label>
+                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5">{t('common.title')}</label>
                     <input
                       type="text"
                       defaultValue={prompt.title}
                       onBlur={(e) => handleTitleBlur(prompt, e.target.value)}
                       className="w-full px-4 py-2.5 text-[14px] font-medium bg-black/[0.03] dark:bg-white/[0.06] rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/25 apple-transition"
                     />
-                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mt-4 mb-1.5">Contenu</label>
+                    <label className="block text-[11px] font-medium uppercase tracking-wide text-text-muted mt-4 mb-1.5">{t('common.content')}</label>
                     <textarea
                       defaultValue={prompt.content}
                       onBlur={(e) => handleContentBlur(prompt, e.target.value)}
@@ -222,7 +224,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                     />
                     {prompt.updatedAt !== prompt.createdAt && (
                       <p className="text-[11px] font-mono text-text-muted mt-2">
-                        Dernière modification : {formatTimestamp(prompt.updatedAt)}
+                        {t('common.lastModified', { date: formatTimestamp(prompt.updatedAt, locale) })}
                       </p>
                     )}
                   </div>
