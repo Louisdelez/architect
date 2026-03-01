@@ -1,4 +1,4 @@
-import type { Project, Document, JournalEntry, Prompt, KanbanCard, KanbanColumnId } from './types';
+import type { Project, Document, JournalEntry, Prompt, KanbanCard, KanbanColumnId, CalendarEvent, RecurrenceException } from './types';
 import { DOCUMENT_TEMPLATES } from './constants';
 
 const LEGACY_KEY = 'project-docs-data';
@@ -33,7 +33,7 @@ export function loadProjects(userId: string): Project[] {
     }
 
     const data: Project[] = raw ? JSON.parse(raw) : [];
-    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [], kanbanCards: p.kanbanCards ?? [] }));
+    return data.map((p) => ({ ...p, journalEntries: p.journalEntries ?? [], prompts: p.prompts ?? [], kanbanCards: p.kanbanCards ?? [], calendarEvents: p.calendarEvents ?? [] }));
   } catch {
     return [];
   }
@@ -58,6 +58,7 @@ export function createProject(name: string): Project {
     journalEntries: [],
     prompts: [],
     kanbanCards: [],
+    calendarEvents: [],
   };
 }
 
@@ -259,5 +260,93 @@ export function deleteKanbanCard(
       ...p,
       kanbanCards: p.kanbanCards.filter((c) => c.id !== cardId),
     };
+  });
+}
+
+export function addCalendarEvent(
+  projects: Project[],
+  projectId: string,
+  event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>
+): Project[] {
+  const now = new Date().toISOString();
+  const calendarEvent: CalendarEvent = {
+    ...event,
+    id: generateId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return { ...p, calendarEvents: [...p.calendarEvents, calendarEvent] };
+  });
+}
+
+export function updateCalendarEvent(
+  projects: Project[],
+  projectId: string,
+  eventId: string,
+  fields: Partial<Pick<CalendarEvent, 'title' | 'description' | 'date' | 'startTime' | 'endTime' | 'color' | 'recurrence' | 'exceptions'>>
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      calendarEvents: p.calendarEvents.map((e) =>
+        e.id === eventId
+          ? { ...e, ...fields, updatedAt: new Date().toISOString() }
+          : e
+      ),
+    };
+  });
+}
+
+export function deleteCalendarEvent(
+  projects: Project[],
+  projectId: string,
+  eventId: string
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      calendarEvents: p.calendarEvents.filter((e) => e.id !== eventId),
+    };
+  });
+}
+
+export function addCalendarEventException(
+  projects: Project[],
+  projectId: string,
+  eventId: string,
+  exception: RecurrenceException
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      calendarEvents: p.calendarEvents.map((e) => {
+        if (e.id !== eventId) return e;
+        const existing = e.exceptions ?? [];
+        // Replace existing exception for this date, or add new one
+        const filtered = existing.filter(ex => ex.originalDate !== exception.originalDate);
+        return {
+          ...e,
+          exceptions: [...filtered, exception],
+          updatedAt: new Date().toISOString(),
+        };
+      }),
+    };
+  });
+}
+
+export function deleteCalendarEventOccurrence(
+  projects: Project[],
+  projectId: string,
+  eventId: string,
+  occurrenceDate: string
+): Project[] {
+  return addCalendarEventException(projects, projectId, eventId, {
+    originalDate: occurrenceDate,
+    deleted: true,
   });
 }

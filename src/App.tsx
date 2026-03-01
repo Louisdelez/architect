@@ -8,12 +8,13 @@ import EmptyState from './components/EmptyState';
 import JournalView from './components/JournalView';
 import PromptsView from './components/PromptsView';
 import KanbanView from './components/KanbanView';
+import CalendarView from './components/CalendarView';
 import AuthScreen from './components/AuthScreen';
-import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard } from './store';
+import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, addCalendarEventException, deleteCalendarEventOccurrence } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
-import { FileText, BookOpen, Sparkles, Columns3, Loader2 } from 'lucide-react';
-import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard } from './types';
+import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2 } from 'lucide-react';
+import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard, CalendarEvent, RecurrenceException } from './types';
 
 function App() {
   const { user, loading } = useAuth();
@@ -23,7 +24,7 @@ function App() {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts' | 'kanban'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts' | 'kanban' | 'calendar'>('documents');
 
   // Load projects when user changes
   useEffect(() => {
@@ -171,6 +172,50 @@ function App() {
     [activeProjectId]
   );
 
+  const handleAddCalendarEvent = useCallback(
+    (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => addCalendarEvent(prev, activeProjectId, event));
+    },
+    [activeProjectId]
+  );
+
+  const handleUpdateCalendarEvent = useCallback(
+    (eventId: string, fields: Partial<Pick<CalendarEvent, 'title' | 'description' | 'date' | 'startTime' | 'endTime' | 'color' | 'recurrence' | 'exceptions'>>) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => updateCalendarEvent(prev, activeProjectId, eventId, fields));
+    },
+    [activeProjectId]
+  );
+
+  const handleDeleteCalendarEvent = useCallback(
+    (eventId: string) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => deleteCalendarEvent(prev, activeProjectId, eventId));
+    },
+    [activeProjectId]
+  );
+
+  const handleUpdateCalendarOccurrence = useCallback(
+    (eventId: string, occurrenceDate: string, fields: Partial<Pick<RecurrenceException, 'title' | 'description' | 'date' | 'startTime' | 'endTime' | 'color'>>) => {
+      if (!activeProjectId) return;
+      const exception: RecurrenceException = {
+        originalDate: occurrenceDate,
+        ...fields,
+      };
+      setProjects((prev) => addCalendarEventException(prev, activeProjectId, eventId, exception));
+    },
+    [activeProjectId]
+  );
+
+  const handleDeleteCalendarOccurrence = useCallback(
+    (eventId: string, occurrenceDate: string) => {
+      if (!activeProjectId) return;
+      setProjects((prev) => deleteCalendarEventOccurrence(prev, activeProjectId, eventId, occurrenceDate));
+    },
+    [activeProjectId]
+  );
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -258,6 +303,22 @@ function App() {
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                  activeTab === 'calendar'
+                    ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
+                    : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
+                }`}
+              >
+                <Calendar size={15} strokeWidth={1.5} />
+                Calendrier
+                {(activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length) > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                    {activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {/* Tab content */}
@@ -300,13 +361,23 @@ function App() {
                 onUpdatePrompt={handleUpdatePrompt}
                 onDeletePrompt={handleDeletePrompt}
               />
-            ) : (
+            ) : activeTab === 'kanban' ? (
               <KanbanView
                 cards={activeProject.kanbanCards}
                 onAddCard={handleAddKanbanCard}
                 onUpdateCard={handleUpdateKanbanCard}
                 onMoveCard={handleMoveKanbanCard}
                 onDeleteCard={handleDeleteKanbanCard}
+              />
+            ) : (
+              <CalendarView
+                events={activeProject.calendarEvents}
+                kanbanCards={activeProject.kanbanCards}
+                onAddEvent={handleAddCalendarEvent}
+                onUpdateEvent={handleUpdateCalendarEvent}
+                onDeleteEvent={handleDeleteCalendarEvent}
+                onUpdateOccurrence={handleUpdateCalendarOccurrence}
+                onDeleteOccurrence={handleDeleteCalendarOccurrence}
               />
             )}
           </div>
