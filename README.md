@@ -97,8 +97,8 @@ Workspace tout-en-un pour structurer, documenter et piloter vos projets. Créez 
 ### Développement
 
 ```bash
-git clone https://github.com/Louisdelez/project-docs.git
-cd project-docs
+git clone https://github.com/Louisdelez/architect.git
+cd architect
 cp .env.example .env  # configurer les variables Firebase
 npm install
 npm run dev
@@ -109,8 +109,8 @@ L'application est accessible sur `http://localhost:5173`.
 ### Docker
 
 ```bash
-git clone https://github.com/Louisdelez/project-docs.git
-cd project-docs
+git clone https://github.com/Louisdelez/architect.git
+cd architect
 # Le .env avec les variables Firebase doit être présent
 docker compose up -d
 ```
