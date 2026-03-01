@@ -591,7 +591,7 @@ function YearGrid({ currentDate, items, onDrillDown }: YearGridProps) {
   }, [items]);
 
   return (
-    <div className="grid grid-cols-4 gap-4 p-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
       {months.map((monthDate) => {
         const monthStart = startOfMonth(monthDate);
         const monthEnd = endOfMonth(monthDate);
@@ -805,12 +805,12 @@ function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, on
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Day headers */}
-      <div className="flex border-b border-border shrink-0">
-        <div className="w-14 shrink-0" />
+      <div className="flex border-b border-border shrink-0 overflow-x-auto">
+        <div className="w-10 sm:w-14 shrink-0 sticky left-0 bg-surface z-10" />
         {days.map((day) => {
           const today = isToday(day);
           return (
-            <div key={day.toISOString()} className="flex-1 text-center py-2 border-l border-border">
+            <div key={day.toISOString()} className="flex-1 min-w-[100px] sm:min-w-0 text-center py-2 border-l border-border">
               <div className={`text-[11px] font-medium ${today ? 'text-accent' : 'text-text-muted'}`}>
                 {format(day, 'EEE', { locale: fr }).replace('.', '')}
               </div>
@@ -825,10 +825,10 @@ function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, on
       </div>
 
       {/* Time grid */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto">
+      <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-auto">
         <div ref={gridRef} className="flex relative" style={{ height: 24 * HOUR_HEIGHT }}>
           {/* Time gutter */}
-          <div className="w-14 shrink-0 relative">
+          <div className="w-10 sm:w-14 shrink-0 relative sticky left-0 bg-surface z-10">
             {HOURS.map((h) => (
               <div
                 key={h}
@@ -846,7 +846,7 @@ function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, on
             const dayItems = itemsByDate.get(dateStr) ?? [];
 
             return (
-              <div key={dateStr} className="flex-1 relative border-l border-border">
+              <div key={dateStr} className="flex-1 min-w-[100px] sm:min-w-0 relative border-l border-border">
                 {/* Hour lines */}
                 {HOURS.map((h) => (
                   <div
@@ -886,6 +886,39 @@ function WeekGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, on
                           item,
                           originX: e.clientX,
                           originY: e.clientY,
+                          offsetY,
+                          gridRect: gridRectWithScroll,
+                          dayDates,
+                          colWidth,
+                          currentDate: item.date,
+                          currentStartTime: item.startTime,
+                          currentEndTime: item.endTime,
+                          active: false,
+                          view: 'week',
+                        });
+                      }}
+                      onTouchStart={(e) => {
+                        if (item.isKanban) return;
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const grid = gridRef.current;
+                        const scroll = containerRef.current;
+                        if (!grid || !scroll) return;
+                        const rect = grid.getBoundingClientRect();
+                        const gutterWidth = 56;
+                        const columnsRect = new DOMRect(
+                          rect.left + gutterWidth, rect.top,
+                          rect.width - gutterWidth, rect.height
+                        );
+                        const dayDates = days.map(d => format(d, 'yyyy-MM-dd'));
+                        const colWidth = columnsRect.width / dayDates.length;
+                        const elTop = minutesToTop(item.startTime);
+                        const offsetY = touch.clientY - rect.top + scroll.scrollTop - elTop;
+                        const gridRectWithScroll = Object.assign(columnsRect, { _scrollTop: scroll.scrollTop });
+                        onDragStart({
+                          item,
+                          originX: touch.clientX,
+                          originY: touch.clientY,
                           offsetY,
                           gridRect: gridRectWithScroll,
                           dayDates,
@@ -1001,7 +1034,7 @@ function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onD
       <div ref={containerRef} className="flex-1 overflow-y-auto">
         <div ref={gridRef} className="flex" style={{ height: 24 * HOUR_HEIGHT }}>
           {/* Time gutter */}
-          <div className="w-16 shrink-0 relative">
+          <div className="w-12 sm:w-16 shrink-0 relative">
             {HOURS.map((h) => (
               <div
                 key={h}
@@ -1052,6 +1085,37 @@ function DayGrid({ currentDate, items, onClickEvent, onClickSlot, dragState, onD
                       item,
                       originX: e.clientX,
                       originY: e.clientY,
+                      offsetY,
+                      gridRect: gridRectWithScroll,
+                      dayDates: [dateStr],
+                      colWidth: columnsRect.width,
+                      currentDate: item.date,
+                      currentStartTime: item.startTime,
+                      currentEndTime: item.endTime,
+                      active: false,
+                      view: 'day',
+                    });
+                  }}
+                  onTouchStart={(e) => {
+                    if (item.isKanban) return;
+                    const touch = e.touches[0];
+                    if (!touch) return;
+                    const grid = gridRef.current;
+                    const scroll = containerRef.current;
+                    if (!grid || !scroll) return;
+                    const rect = grid.getBoundingClientRect();
+                    const gutterWidth = 64;
+                    const columnsRect = new DOMRect(
+                      rect.left + gutterWidth, rect.top,
+                      rect.width - gutterWidth, rect.height
+                    );
+                    const elTop = minutesToTop(item.startTime);
+                    const offsetY = touch.clientY - rect.top + scroll.scrollTop - elTop;
+                    const gridRectWithScroll = Object.assign(columnsRect, { _scrollTop: scroll.scrollTop });
+                    onDragStart({
+                      item,
+                      originX: touch.clientX,
+                      originY: touch.clientY,
                       offsetY,
                       gridRect: gridRectWithScroll,
                       dayDates: [dateStr],
@@ -1224,11 +1288,24 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
       setDragState(null);
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      e.preventDefault();
+      handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY } as MouseEvent);
+    };
+
+    const handleTouchEnd = () => handleMouseUp();
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
@@ -1378,45 +1455,61 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
     }
   }, [viewMode, currentDate]);
 
-  const viewLabels: { mode: CalendarViewMode; label: string }[] = [
-    { mode: 'year', label: 'Année' },
-    { mode: 'month', label: 'Mois' },
-    { mode: 'week', label: 'Semaine' },
-    { mode: 'day', label: 'Jour' },
+  const viewLabels: { mode: CalendarViewMode; label: string; short: string }[] = [
+    { mode: 'year', label: 'Année', short: 'A' },
+    { mode: 'month', label: 'Mois', short: 'M' },
+    { mode: 'week', label: 'Semaine', short: 'S' },
+    { mode: 'day', label: 'Jour', short: 'J' },
   ];
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-surface animate-fadeIn">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0 flex-wrap">
-        <Calendar size={18} strokeWidth={1.5} className="text-accent shrink-0" />
-        <h2 className="text-[15px] font-semibold text-text capitalize mr-auto">{headerTitle}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 border-b border-border shrink-0">
+        {/* Line 1 : icon + title + nav + add button */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Calendar size={18} strokeWidth={1.5} className="text-accent shrink-0" />
+          <h2 className="text-[15px] font-semibold text-text capitalize truncate min-w-0">{headerTitle}</h2>
 
-        {/* Nav buttons */}
-        <div className="flex items-center gap-1">
+          {/* Nav buttons */}
+          <div className="flex items-center gap-1 ml-auto sm:ml-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={goToday}
+              className="px-3 py-1 text-[12px] font-medium rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            >
+              Aujourd'hui
+            </button>
+            <button
+              onClick={() => navigate(1)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Add button */}
           <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            onClick={() => {
+              setCreateDate(undefined);
+              setCreateHour(undefined);
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-xl bg-accent text-white hover:bg-accent-hover apple-transition cursor-pointer shrink-0"
           >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            onClick={goToday}
-            className="px-3 py-1 text-[12px] font-medium rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
-          >
-            Aujourd'hui
-          </button>
-          <button
-            onClick={() => navigate(1)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
-          >
-            <ChevronRight size={16} />
+            <Plus size={14} />
+            <span className="hidden sm:inline">Événement</span>
           </button>
         </div>
 
-        {/* View mode segmented control */}
-        <div className="flex bg-black/[0.04] dark:bg-white/[0.06] rounded-xl p-0.5">
-          {viewLabels.map(({ mode, label }) => (
+        {/* Line 2 : view picker */}
+        <div className="flex bg-black/[0.04] dark:bg-white/[0.06] rounded-xl p-0.5 sm:ml-auto">
+          {viewLabels.map(({ mode, label, short }) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
@@ -1426,23 +1519,11 @@ export default function CalendarView({ events, kanbanCards, onAddEvent, onUpdate
                   : 'text-text-muted hover:text-text'
               }`}
             >
-              {label}
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
         </div>
-
-        {/* Add button */}
-        <button
-          onClick={() => {
-            setCreateDate(undefined);
-            setCreateHour(undefined);
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-xl bg-accent text-white hover:bg-accent-hover apple-transition cursor-pointer"
-        >
-          <Plus size={14} />
-          Événement
-        </button>
       </div>
 
       {/* Grid */}

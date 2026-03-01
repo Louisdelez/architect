@@ -75,7 +75,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-surface animate-fadeIn">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-border">
+      <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center">
             <Sparkles size={18} strokeWidth={1.5} className="text-text-muted" />
@@ -92,12 +92,12 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
           className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
         >
           <Plus size={15} strokeWidth={2} />
-          Nouveau prompt
+          <span className="hidden sm:inline">Nouveau prompt</span>
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
         {/* Create form */}
         {isCreating && (
           <div className="mb-5 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] animate-fadeIn">

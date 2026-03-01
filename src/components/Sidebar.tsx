@@ -1,4 +1,4 @@
-import { Plus, FolderOpen, Search, Download, Trash2, Sun, Moon, Monitor } from 'lucide-react';
+import { Plus, FolderOpen, Search, Download, Trash2, Sun, Moon, Monitor, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Project } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,6 +11,8 @@ interface SidebarProps {
   onCreateProject: () => void;
   onDownloadProject: (project: Project) => void;
   onDeleteProject: (id: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 function ProgressRing({ filled, total }: { filled: number; total: number }) {
@@ -110,6 +112,8 @@ export default function Sidebar({
   onCreateProject,
   onDownloadProject,
   onDeleteProject,
+  isOpen,
+  onClose,
 }: SidebarProps) {
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -144,13 +148,30 @@ export default function Sidebar({
   );
 
   return (
-    <aside className="w-[272px] h-full apple-vibrancy border-r border-border flex flex-col shrink-0 rounded-l-[16px]">
+    <>
+      {/* Backdrop — mobile/tablet only */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/30"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`w-[272px] h-full apple-vibrancy border-r border-border flex flex-col shrink-0 fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto lg:rounded-l-[16px] ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
-            Projets
-          </h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="lg:hidden w-8 h-8 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            >
+              <X size={16} strokeWidth={1.5} />
+            </button>
+            <h1 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-text-muted">
+              Projets
+            </h1>
+          </div>
           <div className="flex items-center gap-1">
             <div className="relative">
               <button
@@ -222,7 +243,7 @@ export default function Sidebar({
                   <p className="text-[13px] font-medium truncate">{project.name}</p>
                 </div>
                 <ProgressRing filled={filledCount} total={totalCount} />
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 apple-transition">
+                <div className="flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 apple-transition">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -275,5 +296,6 @@ export default function Sidebar({
 
       <UserMenu />
     </aside>
+    </>
   );
 }

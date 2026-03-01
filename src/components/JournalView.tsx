@@ -115,11 +115,11 @@ function JournalEditor({
 /* ── Preview modal for a single journal entry ── */
 function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
       <div className="absolute inset-0 modal-backdrop" onClick={onClose} />
-      <div className="modal-content relative w-full max-w-4xl h-[85vh] bg-surface rounded-3xl flex flex-col overflow-hidden" style={{ boxShadow: 'var(--shadow-modal)' }}>
+      <div className="modal-content relative w-full max-w-4xl h-[92vh] sm:h-[85vh] bg-surface rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden" style={{ boxShadow: 'var(--shadow-modal)' }}>
         {/* Header */}
-        <div className="flex items-center justify-center px-8 py-5 border-b border-border shrink-0 relative">
+        <div className="flex items-center justify-center px-5 sm:px-8 py-4 sm:py-5 border-b border-border shrink-0 relative">
           <div className="text-center">
             <h2 className="text-[16px] font-semibold text-text">{entry.title}</h2>
             <p className="text-[11px] font-mono text-text-muted mt-1">{formatTimestamp(entry.createdAt)}</p>
@@ -141,7 +141,7 @@ function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose:
               <p className="text-[16px] text-text-muted">Cette entrée est vide.</p>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-12 py-10">
+            <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">
               <div className="markdown-preview">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {entry.content}
@@ -213,7 +213,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-surface animate-fadeIn">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-5 border-b border-border">
+      <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center">
             <BookOpen size={18} strokeWidth={1.5} className="text-text-muted" />
@@ -233,7 +233,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
               title="Tout télécharger"
             >
               <FileDown size={15} strokeWidth={1.5} />
-              Tout télécharger
+              <span className="hidden sm:inline">Tout télécharger</span>
             </button>
           )}
           <button
@@ -241,13 +241,13 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
           >
             <Plus size={15} strokeWidth={2} />
-            Nouvelle entrée
+            <span className="hidden sm:inline">Nouvelle entrée</span>
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
         {/* Create form */}
         {isCreating && (
           <div className="mb-5 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] animate-fadeIn">

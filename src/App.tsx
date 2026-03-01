@@ -13,7 +13,7 @@ import AuthScreen from './components/AuthScreen';
 import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, addCalendarEventException, deleteCalendarEventOccurrence } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
-import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2 } from 'lucide-react';
+import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2, Menu, ChevronLeft, List } from 'lucide-react';
 import type { Project, JournalEntry, Prompt, KanbanColumnId, KanbanCard, CalendarEvent, RecurrenceException } from './types';
 
 function App() {
@@ -25,6 +25,8 @@ function App() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState<'documents' | 'journal' | 'prompts' | 'kanban' | 'calendar'>('documents');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [docListOpen, setDocListOpen] = useState(false);
 
   // Load projects when user changes
   useEffect(() => {
@@ -70,6 +72,7 @@ function App() {
     (id: string) => {
       setActiveProjectId(id);
       setActiveTab('documents');
+      setSidebarOpen(false);
       const project = projects.find((p) => p.id === id);
       if (project) {
         setActiveDocumentId(project.documents[0]?.id ?? null);
@@ -229,8 +232,8 @@ function App() {
   }
 
   return (
-    <div className="h-full w-full flex p-4">
-      <div className="app-window flex flex-1 min-h-0">
+    <div className="h-full w-full flex p-0 lg:p-4">
+      <div className="app-window flex flex-1 min-h-0 rounded-none lg:rounded-[16px]">
         <Sidebar
           projects={projects}
           activeProjectId={activeProjectId}
@@ -238,83 +241,93 @@ function App() {
           onCreateProject={() => setShowCreateModal(true)}
           onDownloadProject={handleDownloadProject}
           onDeleteProject={handleDeleteProject}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         {activeProject ? (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 min-w-0">
             {/* Tab bar */}
-            <div className="flex items-center gap-1 px-4 pt-3 pb-0 bg-surface border-b border-border">
+            <div className="flex items-center gap-1 px-2 sm:px-4 pt-3 pb-0 bg-surface border-b border-border overflow-x-auto">
+              {/* Hamburger — mobile/tablet only */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer mr-1"
+              >
+                <Menu size={18} strokeWidth={1.5} />
+              </button>
+
               <button
                 onClick={() => setActiveTab('documents')}
-                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer shrink-0 ${
                   activeTab === 'documents'
                     ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
                     : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                 }`}
               >
                 <FileText size={15} strokeWidth={1.5} />
-                Documents
+                <span className="hidden sm:inline">Documents</span>
               </button>
               <button
                 onClick={() => setActiveTab('journal')}
-                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer shrink-0 ${
                   activeTab === 'journal'
                     ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
                     : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                 }`}
               >
                 <BookOpen size={15} strokeWidth={1.5} />
-                Journal de bord
+                <span className="hidden sm:inline">Journal</span>
                 {activeProject.journalEntries.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                  <span className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
                     {activeProject.journalEntries.length}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('prompts')}
-                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer shrink-0 ${
                   activeTab === 'prompts'
                     ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
                     : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                 }`}
               >
                 <Sparkles size={15} strokeWidth={1.5} />
-                Prompts
+                <span className="hidden sm:inline">Prompts</span>
                 {activeProject.prompts.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                  <span className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
                     {activeProject.prompts.length}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('kanban')}
-                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer shrink-0 ${
                   activeTab === 'kanban'
                     ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
                     : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                 }`}
               >
                 <Columns3 size={15} strokeWidth={1.5} />
-                Kanban
+                <span className="hidden sm:inline">Kanban</span>
                 {activeProject.kanbanCards.length > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                  <span className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
                     {activeProject.kanbanCards.length}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('calendar')}
-                className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer ${
+                className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 text-[13px] font-medium rounded-t-xl apple-transition cursor-pointer shrink-0 ${
                   activeTab === 'calendar'
                     ? 'text-accent bg-black/[0.04] dark:bg-white/[0.06]'
                     : 'text-text-muted hover:text-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
                 }`}
               >
                 <Calendar size={15} strokeWidth={1.5} />
-                Calendrier
+                <span className="hidden sm:inline">Calendrier</span>
                 {(activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length) > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
+                  <span className="hidden sm:inline ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-black/[0.06] dark:bg-white/[0.1] text-text-muted">
                     {activeProject.calendarEvents.length + activeProject.kanbanCards.filter(c => c.dueDate).length}
                   </span>
                 )}
@@ -327,22 +340,44 @@ function App() {
                 <DocumentList
                   documents={activeProject.documents}
                   activeDocumentId={activeDocumentId}
-                  onSelectDocument={setActiveDocumentId}
+                  onSelectDocument={(id) => {
+                    setActiveDocumentId(id);
+                    setDocListOpen(false);
+                  }}
+                  isOpen={docListOpen}
+                  onClose={() => setDocListOpen(false)}
                 />
 
                 {activeDocument ? (
-                  <Editor
-                    document={activeDocument}
-                    onContentChange={handleContentChange}
-                    onPreview={() => setShowPreview(true)}
-                  />
+                  <div className="flex-1 flex flex-col min-h-0 min-w-0">
+                    {/* Back button — mobile only */}
+                    <button
+                      onClick={() => setActiveDocumentId(null)}
+                      className="lg:hidden flex items-center gap-1.5 px-3 py-2 text-[13px] text-accent font-medium shrink-0"
+                    >
+                      <ChevronLeft size={16} strokeWidth={2} />
+                      Documents
+                    </button>
+                    <Editor
+                      document={activeDocument}
+                      onContentChange={handleContentChange}
+                      onPreview={() => setShowPreview(true)}
+                    />
+                  </div>
                 ) : (
                   <div className="flex-1 flex items-center justify-center bg-surface animate-fadeIn">
                     <div className="text-center">
                       <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] flex items-center justify-center">
                         <FileText size={22} strokeWidth={1.5} className="text-text-muted" />
                       </div>
-                      <p className="text-[14px] text-text-muted">Sélectionnez un document</p>
+                      <p className="text-[14px] text-text-muted mb-3">Sélectionnez un document</p>
+                      <button
+                        onClick={() => setDocListOpen(true)}
+                        className="lg:hidden flex items-center gap-2 mx-auto px-4 py-2 text-[13px] font-medium text-accent hover:bg-accent-light rounded-xl apple-transition cursor-pointer"
+                      >
+                        <List size={15} strokeWidth={1.5} />
+                        Ouvrir la liste
+                      </button>
                     </div>
                   </div>
                 )}
@@ -385,6 +420,7 @@ function App() {
           <EmptyState
             hasProjects={projects.length > 0}
             onCreateProject={() => setShowCreateModal(true)}
+            onOpenSidebar={() => setSidebarOpen(true)}
           />
         )}
       </div>

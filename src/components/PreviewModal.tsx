@@ -10,7 +10,7 @@ interface PreviewModalProps {
 
 export default function PreviewModal({ document, onClose }: PreviewModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
       {/* Backdrop */}
       <div
         className="absolute inset-0 modal-backdrop"
@@ -18,9 +18,9 @@ export default function PreviewModal({ document, onClose }: PreviewModalProps) {
       />
 
       {/* Modal */}
-      <div className="modal-content relative w-full max-w-4xl h-[85vh] bg-surface rounded-3xl flex flex-col overflow-hidden" style={{ boxShadow: 'var(--shadow-modal)' }}>
+      <div className="modal-content relative w-full max-w-4xl h-[92vh] sm:h-[85vh] bg-surface rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden" style={{ boxShadow: 'var(--shadow-modal)' }}>
         {/* Header */}
-        <div className="flex items-center justify-center px-8 py-5 border-b border-border shrink-0 relative">
+        <div className="flex items-center justify-center px-5 sm:px-8 py-4 sm:py-5 border-b border-border shrink-0 relative">
           <h2 className="text-[16px] font-semibold text-text">{document.name}</h2>
           <button
             onClick={onClose}
@@ -40,7 +40,7 @@ export default function PreviewModal({ document, onClose }: PreviewModalProps) {
               <p className="text-[16px] text-text-muted">Ce document est vide.</p>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-12 py-10">
+            <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">
               <div className="markdown-preview">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {document.content}

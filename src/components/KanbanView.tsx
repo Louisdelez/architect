@@ -156,12 +156,12 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[260px] max-w-[360px] rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] p-3 flex flex-col gap-2 apple-transition ${
+      className={`flex-1 min-w-[85vw] sm:min-w-[260px] max-w-[85vw] sm:max-w-[360px] snap-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] p-3 flex flex-col gap-2 apple-transition ${
         isOver ? 'ring-2 ring-accent/20' : ''
       }`}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-1 pb-1">
+      <div className="flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4">
         <Icon size={14} strokeWidth={1.5} className="text-text-muted" />
         <span className="text-[12px] font-semibold text-text uppercase tracking-wide">{column.label}</span>
         <span className="ml-auto text-[11px] font-medium text-text-muted bg-black/[0.04] dark:bg-white/[0.06] px-1.5 py-0.5 rounded-md">
@@ -522,7 +522,7 @@ export default function KanbanView({ cards, onAddCard, onUpdateCard, onMoveCard,
       </div>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto px-6 pb-6">
+      <div className="flex-1 overflow-x-auto px-4 sm:px-6 pb-4 sm:pb-6 snap-x snap-mandatory lg:snap-none">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}

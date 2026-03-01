@@ -115,10 +115,10 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
   return (
     <div className="flex-1 flex flex-col h-full min-w-0 bg-surface">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div>
-          <h2 className="text-[16px] font-semibold text-text">{document.name}</h2>
-          <p className="text-[12px] text-text-muted mt-1">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-border">
+        <div className="min-w-0">
+          <h2 className="text-[14px] sm:text-[16px] font-semibold text-text truncate">{document.name}</h2>
+          <p className="text-[12px] text-text-muted mt-1 hidden sm:block">
             {document.content.trim().length > 0
               ? `${document.content.split('\n').length} lignes`
               : 'Document vide'}
@@ -178,17 +178,17 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
 
           <button
             onClick={onPreview}
-            className="flex items-center gap-2 px-5 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
+            className="flex items-center gap-2 px-3 sm:px-5 py-2 text-[13px] font-medium text-white bg-accent hover:bg-accent-hover rounded-full apple-transition apple-press cursor-pointer"
             title="Prévisualiser"
           >
             <Eye size={15} />
-            Preview
+            <span className="hidden sm:inline">Preview</span>
           </button>
         </div>
       </div>
 
       {/* Editor */}
-      <div className="flex-1 min-h-0 p-5">
+      <div className="flex-1 min-h-0 p-2 sm:p-5">
         <div className="h-full overflow-hidden bg-editor-bg rounded-2xl" ref={editorRef} />
       </div>
     </div>
