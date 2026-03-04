@@ -37,13 +37,20 @@ export function loadProjects(userId: string): Project[] {
     const priorityMap: Record<string, 'high' | 'medium' | 'low'> = { haute: 'high', moyenne: 'medium', basse: 'low' };
     return data.map((p) => ({
       ...p,
-      journalEntries: p.journalEntries ?? [],
+      journalEntries: (p.journalEntries ?? []).map((e) => ({
+        ...e,
+        links: e.links ?? [],
+      })),
       prompts: p.prompts ?? [],
       kanbanCards: (p.kanbanCards ?? []).map((c) => ({
         ...c,
         priority: priorityMap[c.priority] ?? c.priority,
       })),
       calendarEvents: p.calendarEvents ?? [],
+      documents: (p.documents ?? []).map((d) => ({
+        ...d,
+        links: d.links ?? [],
+      })),
     }));
   } catch {
     return [];
@@ -59,6 +66,7 @@ export function createProject(name: string): Project {
     id: slugify(docName),
     name: docName,
     content: '',
+    links: [],
   }));
 
   return {
@@ -90,6 +98,23 @@ export function updateDocumentContent(
   });
 }
 
+export function updateDocumentLinks(
+  projects: Project[],
+  projectId: string,
+  documentId: string,
+  links: string[]
+): Project[] {
+  return projects.map((p) => {
+    if (p.id !== projectId) return p;
+    return {
+      ...p,
+      documents: p.documents.map((d) =>
+        d.id === documentId ? { ...d, links } : d
+      ),
+    };
+  });
+}
+
 export function addJournalEntry(
   projects: Project[],
   projectId: string,
@@ -101,6 +126,7 @@ export function addJournalEntry(
     id: generateId(),
     title: title.trim(),
     content,
+    links: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -114,7 +140,7 @@ export function updateJournalEntry(
   projects: Project[],
   projectId: string,
   entryId: string,
-  fields: Partial<Pick<JournalEntry, 'title' | 'content'>>
+  fields: Partial<Pick<JournalEntry, 'title' | 'content' | 'links'>>
 ): Project[] {
   return projects.map((p) => {
     if (p.id !== projectId) return p;

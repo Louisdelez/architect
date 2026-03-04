@@ -16,6 +16,7 @@ import type { CalendarEvent, CalendarViewMode, KanbanCard, RecurrenceRule, Recur
 import { expandAllEvents, getViewDateRange } from '../recurrence';
 import type { CalendarItem } from '../recurrence';
 import { useI18n } from '../i18n/I18nContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 const EVENT_COLORS = [
   '#007aff', '#ff9500', '#ff3b30', '#34c759',
@@ -404,8 +405,7 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
   const [endTime, setEndTime] = useState(event?.endTime ?? (defaultStartTime ? `${String(Math.min(23, parseInt(defaultStartTime.split(':')[0]) + 1)).padStart(2, '0')}:00` : '10:00'));
   const [color, setColor] = useState(event?.color ?? EVENT_COLORS[0]);
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | undefined>(event?.recurrence);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -420,31 +420,18 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
   };
 
   const handleDelete = () => {
-    if (!event) return;
-    if (isOccurrence && onDeleteOccurrence && occurrenceDate) {
-      if (confirmDelete) {
-        onDeleteOccurrence(event.id, occurrenceDate);
-        onClose();
-      } else {
-        setConfirmDelete(true);
-        deleteTimerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
-      }
-    } else if (onDelete) {
-      if (confirmDelete) {
-        onDelete(event.id);
-        onClose();
-      } else {
-        setConfirmDelete(true);
-        deleteTimerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
-      }
-    }
+    setShowDeleteModal(true);
   };
 
-  useEffect(() => {
-    return () => {
-      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-    };
-  }, []);
+  const confirmDeleteAction = () => {
+    if (!event) return;
+    if (isOccurrence && onDeleteOccurrence && occurrenceDate) {
+      onDeleteOccurrence(event.id, occurrenceDate);
+    } else if (onDelete) {
+      onDelete(event.id);
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -548,14 +535,10 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
             {event && (onDelete || (isOccurrence && onDeleteOccurrence)) && (
               <button
                 onClick={handleDelete}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer ${
-                  confirmDelete
-                    ? 'bg-danger/20 text-danger'
-                    : 'text-text-muted hover:text-danger hover:bg-danger/10'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer text-text-muted hover:text-danger hover:bg-danger/10"
               >
                 <Trash2 size={13} />
-                {confirmDelete ? t('common.confirm') : isOccurrence ? t('calendar.deleteOccurrence') : t('common.delete')}
+                {isOccurrence ? t('calendar.deleteOccurrence') : t('common.delete')}
               </button>
             )}
           </div>
@@ -567,6 +550,13 @@ function EventModal({ event, defaultDate, defaultStartTime, isOccurrence, occurr
             {event ? t('common.save') : t('calendar.create')}
           </button>
         </div>
+
+        {showDeleteModal && (
+          <ConfirmDeleteModal
+            onConfirm={confirmDeleteAction}
+            onCancel={() => setShowDeleteModal(false)}
+          />
+        )}
       </div>
     </div>
   );

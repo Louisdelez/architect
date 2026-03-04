@@ -17,6 +17,7 @@ const fr: TranslationKeys = {
   'common.lastModified': 'Dernière modification : {{date}}',
   'common.copyContent': 'Copier le contenu',
   'common.confirmDelete': 'Confirmer la suppression',
+  'common.confirmDeleteMessage': 'Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.',
   'common.newTag': 'Nouveau tag...',
 
   // ─── Auth ───────────────────────────────────────────
@@ -80,6 +81,9 @@ const fr: TranslationKeys = {
   'editor.copyToClipboard': 'Copier dans le presse-papier',
   'editor.download': 'Télécharger',
   'editor.preview': 'Prévisualiser',
+  'editor.print': 'Imprimer',
+  'editor.links': 'Liens',
+  'editor.addLink': 'Ajouter un lien...',
 
   // ─── Preview ────────────────────────────────────────
   'preview.emptyDocument': 'Ce document est vide.',

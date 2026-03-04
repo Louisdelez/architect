@@ -17,6 +17,7 @@ const de: TranslationKeys = {
   'common.lastModified': 'Zuletzt bearbeitet: {{date}}',
   'common.copyContent': 'Inhalt kopieren',
   'common.confirmDelete': 'Löschung bestätigen',
+  'common.confirmDeleteMessage': 'Möchten Sie dieses Element wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
   'common.newTag': 'Neues Tag...',
 
   // ─── Auth ───────────────────────────────────────────
@@ -80,6 +81,9 @@ const de: TranslationKeys = {
   'editor.copyToClipboard': 'In Zwischenablage kopieren',
   'editor.download': 'Herunterladen',
   'editor.preview': 'Vorschau',
+  'editor.print': 'Drucken',
+  'editor.links': 'Links',
+  'editor.addLink': 'Link hinzufügen...',
 
   // ─── Preview ────────────────────────────────────────
   'preview.emptyDocument': 'Dieses Dokument ist leer.',

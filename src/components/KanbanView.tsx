@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import type { KanbanCard, KanbanColumnId, KanbanPriority, KanbanTag } from '../types';
 import { useI18n } from '../i18n/I18nContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -233,8 +234,7 @@ function CardEditModal({
   const [tags, setTags] = useState<KanbanTag[]>(card.tags);
   const [newTagLabel, setNewTagLabel] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSave = useCallback(() => {
     onSave({
@@ -248,18 +248,13 @@ function CardEditModal({
   }, [title, description, priority, tags, dueDate, card.title, onSave, onClose]);
 
   const handleDelete = () => {
-    if (confirmDelete) {
-      onDelete();
-      onClose();
-    } else {
-      setConfirmDelete(true);
-      deleteTimerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
-    }
+    setShowDeleteModal(true);
   };
 
-  useEffect(() => {
-    return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
-  }, []);
+  const confirmDeleteAction = () => {
+    onDelete();
+    onClose();
+  };
 
   const addTag = () => {
     const trimmed = newTagLabel.trim();
@@ -379,14 +374,10 @@ function CardEditModal({
         <div className="flex items-center justify-between px-6 py-4 border-t border-border">
           <button
             onClick={handleDelete}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer ${
-              confirmDelete
-                ? 'bg-danger/20 text-danger'
-                : 'text-text-muted hover:text-danger hover:bg-danger/10'
-            }`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg apple-transition cursor-pointer text-text-muted hover:text-danger hover:bg-danger/10"
           >
             <Trash2 size={13} />
-            {confirmDelete ? t('common.confirm') : t('common.delete')}
+            {t('common.delete')}
           </button>
           <button
             onClick={handleSave}
@@ -395,6 +386,13 @@ function CardEditModal({
             {t('common.save')}
           </button>
         </div>
+
+        {showDeleteModal && (
+          <ConfirmDeleteModal
+            onConfirm={confirmDeleteAction}
+            onCancel={() => setShowDeleteModal(false)}
+          />
+        )}
       </div>
     </div>
   );

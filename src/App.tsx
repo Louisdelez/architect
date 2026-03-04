@@ -6,7 +6,7 @@ import PreviewModal from './components/PreviewModal';
 import CreateProjectModal from './components/CreateProjectModal';
 import EmptyState from './components/EmptyState';
 import AuthScreen from './components/AuthScreen';
-import { loadProjects, saveProjects, createProject, updateDocumentContent, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, addCalendarEventException, deleteCalendarEventOccurrence } from './store';
+import { loadProjects, saveProjects, createProject, updateDocumentContent, updateDocumentLinks, addJournalEntry, updateJournalEntry, deleteJournalEntry, addPrompt, updatePrompt, deletePrompt, addKanbanCard, updateKanbanCard, moveKanbanCard, deleteKanbanCard, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, addCalendarEventException, deleteCalendarEventOccurrence } from './store';
 import { downloadProjectZip } from './utils/export';
 import { useAuth } from './contexts/AuthContext';
 import { FileText, BookOpen, Sparkles, Columns3, Calendar, Loader2, Menu, ChevronLeft, List } from 'lucide-react';
@@ -106,6 +106,16 @@ function App() {
     [activeProjectId, activeDocumentId]
   );
 
+  const handleLinksChange = useCallback(
+    (links: string[]) => {
+      if (!activeProjectId || !activeDocumentId) return;
+      setProjects((prev) =>
+        updateDocumentLinks(prev, activeProjectId, activeDocumentId, links)
+      );
+    },
+    [activeProjectId, activeDocumentId]
+  );
+
   const handleDownloadProject = useCallback(async (project: Project) => {
     await downloadProjectZip(project);
   }, []);
@@ -119,7 +129,7 @@ function App() {
   );
 
   const handleUpdateJournalEntry = useCallback(
-    (entryId: string, fields: Partial<Pick<JournalEntry, 'title' | 'content'>>) => {
+    (entryId: string, fields: Partial<Pick<JournalEntry, 'title' | 'content' | 'links'>>) => {
       if (!activeProjectId) return;
       setProjects((prev) => updateJournalEntry(prev, activeProjectId, entryId, fields));
     },
@@ -376,6 +386,7 @@ function App() {
                     <Editor
                       document={activeDocument}
                       onContentChange={handleContentChange}
+                      onLinksChange={handleLinksChange}
                       onPreview={() => setShowPreview(true)}
                     />
                   </div>

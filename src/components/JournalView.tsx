@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Download, FileDown, Trash2, BookOpen, ChevronDown, ChevronRight, Eye, Copy, Check, X } from 'lucide-react';
+import { Plus, Download, FileDown, Trash2, BookOpen, ChevronDown, ChevronRight, Eye, Copy, Check, X, Link, ExternalLink, Printer } from 'lucide-react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -7,16 +7,18 @@ import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { downloadJournalEntry, downloadAllJournalEntries, copyToClipboard } from '../utils/export';
+import rehypeHighlight from 'rehype-highlight';
+import { downloadJournalEntry, downloadAllJournalEntries, copyToClipboard, printMarkdownPreview, downloadPdf } from '../utils/export';
 import { formatTimestamp } from '../utils/format';
 import { useIsDark } from '../hooks/useIsDark';
 import { useI18n } from '../i18n/I18nContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import type { JournalEntry } from '../types';
 
 interface JournalViewProps {
   entries: JournalEntry[];
   onAddEntry: (title: string, content: string) => void;
-  onUpdateEntry: (entryId: string, fields: Partial<Pick<JournalEntry, 'title' | 'content'>>) => void;
+  onUpdateEntry: (entryId: string, fields: Partial<Pick<JournalEntry, 'title' | 'content' | 'links'>>) => void;
   onDeleteEntry: (entryId: string) => void;
 }
 
@@ -93,9 +95,20 @@ function JournalEditor({
   );
 }
 
+function getLinkLabel(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    const name = hostname.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return url;
+  }
+}
+
 /* ── Preview modal for a single journal entry ── */
 function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose: () => void }) {
   const { t, locale } = useI18n();
+  const validLinks = entry.links.filter((l) => l.trim());
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
@@ -114,6 +127,23 @@ function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose:
             <X size={14} className="text-text-secondary" />
           </button>
         </div>
+        {/* Links */}
+        {validLinks.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-5 sm:px-8 py-3 border-b border-border shrink-0">
+            {validLinks.map((link, i) => (
+              <a
+                key={i}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-full apple-transition"
+              >
+                {getLinkLabel(link)}
+                <ExternalLink size={12} strokeWidth={2} />
+              </a>
+            ))}
+          </div>
+        )}
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {entry.content.trim().length === 0 ? (
@@ -126,7 +156,7 @@ function JournalPreviewModal({ entry, onClose }: { entry: JournalEntry; onClose:
           ) : (
             <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">
               <div className="markdown-preview">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                   {entry.content}
                 </ReactMarkdown>
               </div>
@@ -144,9 +174,10 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
   const [previewEntry, setPreviewEntry] = useState<JournalEntry | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [downloadMenuId, setDownloadMenuId] = useState<string | null>(null);
   const newTitleRef = useRef<HTMLInputElement>(null);
   const isDark = useIsDark();
   const { t, tp, locale } = useI18n();
@@ -178,13 +209,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
   );
 
   const handleDelete = (id: string) => {
-    if (confirmDeleteId === id) {
-      onDeleteEntry(id);
-      setConfirmDeleteId(null);
-      if (expandedEntryId === id) setExpandedEntryId(null);
-    } else {
-      setConfirmDeleteId(id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
+    setDeleteEntryId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteEntryId) {
+      onDeleteEntry(deleteEntryId);
+      if (expandedEntryId === deleteEntryId) setExpandedEntryId(null);
+      setDeleteEntryId(null);
     }
   };
 
@@ -294,7 +326,7 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
             return (
               <div
                 key={entry.id}
-                className="rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] apple-transition overflow-hidden"
+                className="rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] apple-transition"
               >
                 {/* Collapsed header */}
                 <div
@@ -341,20 +373,46 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                       <Eye size={14} strokeWidth={1.5} />
                     </button>
                     <button
-                      onClick={() => downloadJournalEntry(entry)}
+                      onClick={() => printMarkdownPreview(entry.content, entry.title)}
                       className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
-                      title={t('journal.downloadEntry')}
+                      title={t('editor.print')}
                     >
-                      <Download size={14} strokeWidth={1.5} />
+                      <Printer size={14} strokeWidth={1.5} />
                     </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setDownloadMenuId(downloadMenuId === entry.id ? null : entry.id)}
+                        className="p-2 rounded-lg text-text-muted hover:text-accent hover:bg-accent-light apple-transition cursor-pointer"
+                        title={t('journal.downloadEntry')}
+                      >
+                        <Download size={14} strokeWidth={1.5} />
+                      </button>
+                      {downloadMenuId === entry.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setDownloadMenuId(null)} />
+                          <div className="dropdown-menu absolute right-0 top-full mt-2 rounded-2xl shadow-lg z-20 py-1.5 min-w-[160px] border border-border">
+                            <button
+                              onClick={() => { downloadJournalEntry(entry); setDownloadMenuId(null); }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+                            >
+                              <FileDown size={15} className="text-text-muted" />
+                              Markdown (.md)
+                            </button>
+                            <button
+                              onClick={() => { downloadPdf({ id: entry.id, name: entry.title, content: entry.content, links: entry.links }); setDownloadMenuId(null); }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+                            >
+                              <FileDown size={15} className="text-text-muted" />
+                              Document (.pdf)
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleDelete(entry.id)}
-                      className={`p-2 rounded-lg apple-transition cursor-pointer ${
-                        confirmDeleteId === entry.id
-                          ? 'bg-danger/20 hover:bg-danger/30 text-danger'
-                          : 'text-text-muted hover:text-danger hover:bg-danger/10'
-                      }`}
-                      title={confirmDeleteId === entry.id ? t('common.confirmDelete') : t('common.delete')}
+                      className="p-2 rounded-lg apple-transition cursor-pointer text-text-muted hover:text-danger hover:bg-danger/10"
+                      title={t('common.delete')}
                     >
                       <Trash2 size={14} strokeWidth={1.5} />
                     </button>
@@ -383,6 +441,46 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
                         {t('common.lastModified', { date: formatTimestamp(entry.updatedAt, locale) })}
                       </p>
                     )}
+                    {/* Links */}
+                    <div className="mt-4 px-1">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Link size={13} className="text-text-muted" strokeWidth={1.5} />
+                        <span className="text-[12px] font-medium text-text-muted">{t('editor.links')}</span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {[...entry.links, ''].map((link, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <input
+                              type="url"
+                              value={link}
+                              placeholder={t('editor.addLink')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const newLinks = [...entry.links];
+                                if (i < entry.links.length) {
+                                  newLinks[i] = val;
+                                } else if (val) {
+                                  newLinks.push(val);
+                                }
+                                onUpdateEntry(entry.id, { links: newLinks });
+                              }}
+                              className="flex-1 min-w-0 px-3 py-1.5 text-[13px] rounded-lg bg-black/[0.03] dark:bg-white/[0.06] text-text placeholder:text-text-muted/50 outline-none focus:ring-1 focus:ring-accent/30 apple-transition"
+                            />
+                            {i < entry.links.length && (
+                              <button
+                                onClick={() => {
+                                  const newLinks = entry.links.filter((_, j) => j !== i);
+                                  onUpdateEntry(entry.id, { links: newLinks });
+                                }}
+                                className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 apple-transition cursor-pointer"
+                              >
+                                <X size={14} strokeWidth={1.5} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -394,6 +492,14 @@ export default function JournalView({ entries, onAddEntry, onUpdateEntry, onDele
       {/* Preview modal */}
       {previewEntry && (
         <JournalPreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} />
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteEntryId && (
+        <ConfirmDeleteModal
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteEntryId(null)}
+        />
       )}
     </div>
   );

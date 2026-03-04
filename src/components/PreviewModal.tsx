@@ -1,6 +1,7 @@
-import { X, FileText } from 'lucide-react';
+import { X, FileText, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 import type { Document } from '../types';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -9,8 +10,19 @@ interface PreviewModalProps {
   onClose: () => void;
 }
 
+function getLinkLabel(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    const name = hostname.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return url;
+  }
+}
+
 export default function PreviewModal({ document, onClose }: PreviewModalProps) {
   const { t } = useI18n();
+  const validLinks = document.links.filter((l) => l.trim());
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
@@ -33,6 +45,24 @@ export default function PreviewModal({ document, onClose }: PreviewModalProps) {
           </button>
         </div>
 
+        {/* Links */}
+        {validLinks.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-5 sm:px-8 py-3 border-b border-border shrink-0">
+            {validLinks.map((link, i) => (
+              <a
+                key={i}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-accent bg-accent/10 hover:bg-accent/20 rounded-full apple-transition"
+              >
+                {getLinkLabel(link)}
+                <ExternalLink size={12} strokeWidth={2} />
+              </a>
+            ))}
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {document.content.trim().length === 0 ? (
@@ -45,7 +75,7 @@ export default function PreviewModal({ document, onClose }: PreviewModalProps) {
           ) : (
             <div className="max-w-3xl mx-auto px-5 sm:px-12 py-6 sm:py-10">
               <div className="markdown-preview">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                   {document.content}
                 </ReactMarkdown>
               </div>

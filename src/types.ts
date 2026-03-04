@@ -2,12 +2,14 @@ export interface Document {
   id: string;
   name: string;
   content: string;
+  links: string[];
 }
 
 export interface JournalEntry {
   id: string;
   title: string;
   content: string;
+  links: string[];
   createdAt: string;
   updatedAt: string;
 }

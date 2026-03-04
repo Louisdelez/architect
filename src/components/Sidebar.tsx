@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Project } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import UserMenu from './UserMenu';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { useI18n } from '../i18n/I18nContext';
 import type { Locale } from '../i18n/types';
 
@@ -173,7 +174,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { t, locale, setLocale } = useI18n();
   const [search, setSearch] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
@@ -330,32 +331,18 @@ export default function Sidebar({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirmDelete === project.id) {
-                        onDeleteProject(project.id);
-                        setConfirmDelete(null);
-                      } else {
-                        setConfirmDelete(project.id);
-                        setTimeout(() => setConfirmDelete(null), 3000);
-                      }
+                      setDeleteProjectId(project.id);
                     }}
                     className={`p-1.5 rounded-lg apple-transition cursor-pointer ${
-                      confirmDelete === project.id
-                        ? 'bg-danger/20 hover:bg-danger/30'
-                        : isActive
-                          ? 'hover:bg-white/20'
-                          : 'hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
+                      isActive
+                        ? 'hover:bg-white/20'
+                        : 'hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
                     }`}
-                    title={confirmDelete === project.id ? t('common.confirmDelete') : t('sidebar.deleteProject')}
+                    title={t('sidebar.deleteProject')}
                   >
                     <Trash2
                       size={13}
-                      className={
-                        confirmDelete === project.id
-                          ? 'text-danger'
-                          : isActive
-                            ? 'text-white/80'
-                            : 'text-text-muted'
-                      }
+                      className={isActive ? 'text-white/80' : 'text-text-muted'}
                     />
                   </button>
                 </div>
@@ -366,7 +353,18 @@ export default function Sidebar({
       </div>
 
       <UserMenu />
+
     </aside>
+
+    {deleteProjectId && (
+      <ConfirmDeleteModal
+        onConfirm={() => {
+          onDeleteProject(deleteProjectId);
+          setDeleteProjectId(null);
+        }}
+        onCancel={() => setDeleteProjectId(null)}
+      />
+    )}
     </>
   );
 }

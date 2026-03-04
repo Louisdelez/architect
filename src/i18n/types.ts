@@ -17,6 +17,7 @@ export interface TranslationKeys {
   'common.lastModified': string;
   'common.copyContent': string;
   'common.confirmDelete': string;
+  'common.confirmDeleteMessage': string;
   'common.newTag': string;
 
   // ─── Auth ───────────────────────────────────────────
@@ -80,6 +81,9 @@ export interface TranslationKeys {
   'editor.copyToClipboard': string;
   'editor.download': string;
   'editor.preview': string;
+  'editor.print': string;
+  'editor.links': string;
+  'editor.addLink': string;
 
   // ─── Preview ────────────────────────────────────────
   'preview.emptyDocument': string;

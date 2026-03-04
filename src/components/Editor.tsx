@@ -4,19 +4,20 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Download, Eye, Copy, FileDown, Check } from 'lucide-react';
+import { Download, Eye, Copy, FileDown, Check, Link, X, Printer } from 'lucide-react';
 import type { Document } from '../types';
-import { copyToClipboard, downloadMarkdown, downloadPdf } from '../utils/export';
+import { copyToClipboard, downloadMarkdown, downloadPdf, printMarkdownPreview } from '../utils/export';
 import { useIsDark } from '../hooks/useIsDark';
 import { useI18n } from '../i18n/I18nContext';
 
 interface EditorProps {
   document: Document;
   onContentChange: (content: string) => void;
+  onLinksChange: (links: string[]) => void;
   onPreview: () => void;
 }
 
-export default function Editor({ document, onContentChange, onPreview }: EditorProps) {
+export default function Editor({ document, onContentChange, onLinksChange, onPreview }: EditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const [copied, setCopied] = useState(false);
@@ -163,6 +164,14 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
             )}
           </div>
 
+          <button
+            onClick={() => printMarkdownPreview(document.content, document.name)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-text-muted hover:text-text hover:bg-black/[0.04] dark:hover:bg-white/[0.06] apple-transition cursor-pointer"
+            title={t('editor.print')}
+          >
+            <Printer size={16} strokeWidth={1.5} />
+          </button>
+
           <div className="w-px h-6 bg-border mx-1.5" />
 
           <button
@@ -176,9 +185,49 @@ export default function Editor({ document, onContentChange, onPreview }: EditorP
         </div>
       </div>
 
-      {/* Editor */}
-      <div className="flex-1 min-h-0 p-2 sm:p-5">
+      {/* Editor + Links (scroll down to see links) */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-5">
         <div className="h-full overflow-hidden bg-editor-bg rounded-2xl" ref={editorRef} />
+        {/* Links — scroll down to access */}
+        <div className="mt-3 px-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Link size={13} className="text-text-muted" strokeWidth={1.5} />
+            <span className="text-[12px] font-medium text-text-muted">{t('editor.links')}</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {[...document.links, ''].map((link, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <input
+                  type="url"
+                  value={link}
+                  placeholder={t('editor.addLink')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const newLinks = [...document.links];
+                    if (i < document.links.length) {
+                      newLinks[i] = val;
+                    } else if (val) {
+                      newLinks.push(val);
+                    }
+                    onLinksChange(newLinks);
+                  }}
+                  className="flex-1 min-w-0 px-3 py-1.5 text-[13px] rounded-lg bg-black/[0.03] dark:bg-white/[0.06] text-text placeholder:text-text-muted/50 outline-none focus:ring-1 focus:ring-accent/30 apple-transition"
+                />
+                {i < document.links.length && (
+                  <button
+                    onClick={() => {
+                      const newLinks = document.links.filter((_, j) => j !== i);
+                      onLinksChange(newLinks);
+                    }}
+                    className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 apple-transition cursor-pointer"
+                  >
+                    <X size={14} strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

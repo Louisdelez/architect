@@ -3,6 +3,7 @@ import { Plus, Sparkles, ChevronDown, ChevronRight, Copy, Check, Trash2 } from '
 import { copyToClipboard } from '../utils/export';
 import { formatTimestamp } from '../utils/format';
 import { useI18n } from '../i18n/I18nContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import type { Prompt } from '../types';
 
 interface PromptsViewProps {
@@ -17,7 +18,7 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletePromptId, setDeletePromptId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const newTitleRef = useRef<HTMLInputElement>(null);
   const { t, tp, locale } = useI18n();
@@ -48,13 +49,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
   };
 
   const handleDelete = (id: string) => {
-    if (confirmDeleteId === id) {
-      onDeletePrompt(id);
-      setConfirmDeleteId(null);
-      if (expandedId === id) setExpandedId(null);
-    } else {
-      setConfirmDeleteId(id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
+    setDeletePromptId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletePromptId) {
+      onDeletePrompt(deletePromptId);
+      if (expandedId === deletePromptId) setExpandedId(null);
+      setDeletePromptId(null);
     }
   };
 
@@ -193,12 +195,8 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
                     </button>
                     <button
                       onClick={() => handleDelete(prompt.id)}
-                      className={`p-2 rounded-lg apple-transition cursor-pointer ${
-                        confirmDeleteId === prompt.id
-                          ? 'bg-danger/20 hover:bg-danger/30 text-danger'
-                          : 'text-text-muted hover:text-danger hover:bg-danger/10'
-                      }`}
-                      title={confirmDeleteId === prompt.id ? t('common.confirmDelete') : t('common.delete')}
+                      className="p-2 rounded-lg apple-transition cursor-pointer text-text-muted hover:text-danger hover:bg-danger/10"
+                      title={t('common.delete')}
                     >
                       <Trash2 size={14} strokeWidth={1.5} />
                     </button>
@@ -234,6 +232,14 @@ export default function PromptsView({ prompts, onAddPrompt, onUpdatePrompt, onDe
           })}
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deletePromptId && (
+        <ConfirmDeleteModal
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletePromptId(null)}
+        />
+      )}
     </div>
   );
 }
